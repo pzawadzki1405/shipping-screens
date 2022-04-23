@@ -3,9 +3,9 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record'],
+ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 'N/runtime'],
 
-	function(serverWidget, search, https, message, record) {
+ 	function(serverWidget, search, https, message, record, runtime) {
 
 		var SHIPPING_METHOD_URL = {
 			"fedex": "https://6241176.app.netsuite.com/app/accounting/print/hotprint.nl?regular=T&sethotprinter=T&id=SOINTERNALID&label=UPS%20Shipping%20Labels&printtype=fedexshippinglabel&trantype=itemship&auxtrans=IFINTERNALID",
@@ -23,6 +23,39 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record'],
 					var allowRepeating = context.request.parameters.allowRepeating;
 					var selectOrderNo = context.request.parameters.selectOrderNo;
 					var waveNumber = context.request.parameters.waveNumber;
+					//********Added PERFORMANCE - Przemyslaw Zawadzki******////
+ 					var userName = runtime.getCurrentUser().name;
+ 					var userID = runtime.getCurrentUser().id;
+ 					log.debug("userName -->: ", userName);
+ 					log.debug("userID -->: ", userID);
+                     var strOutput = '';
+ 					try{
+
+ 						var mySearch = search.load({ id: 'customsearchpz_pack_performance_2_4'});
+ 						var results_search = mySearch.run();
+ 						var results_search_array = results_search.getRange({
+     					start: 0,
+     					end: 20
+ 						});
+
+ 						log.debug("results_search_array.length -->: ", results_search_array.length);
+
+ 						//column [0] is timeout, column [1] is username, column [2] orders, column [3] items
+ 						for (var i = 0; i < results_search_array.length; i++){
+ 								if (((results_search_array[i].getValue(results_search.columns[1]))) == userID)
+   							strOutput = results_search_array[i].getText(results_search.columns[1]) + ' Orders shipped: ' +
+ 								results_search_array[i].getValue(results_search.columns[2]) +' Items shipped: ' +
+ 							  results_search_array[i].getValue(results_search.columns[3]);
+                         }
+
+ 						if (strOutput == ''){
+ 							strOutput = userName + ' Orders shipped: 0 Items shipped: 0';
+    						}
+                     }
+ 						catch (err){
+  						 log.error("Error in run performance", err);
+  					 }
+ 					 //********Added PERFORMANCE - Przemyslaw Zawadzki******////
 					if (allowRepeating == true || allowRepeating == 'true') {
 						allowRepeating = 'T';
 					} else {
@@ -31,6 +64,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record'],
 					var form = serverWidget.createForm({
 						title: 'Print Integrated Shipping Labels'
 					});
+					//********Added PERFORMANCE - Przemyslaw Zawadzki******////
+					form.addField({
+						id: 'custpage_username',
+						type: serverWidget.FieldType.LABEL,
+						label: 'Performance: ' + strOutput
+					});
+					//********Added PERFORMANCE - Przemyslaw Zawadzki******////
 					form.addField({
 						id: 'custpage_item_barcode',
 						type: serverWidget.FieldType.TEXT,
@@ -178,7 +218,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record'],
 					sublist.addField({
 						id: 'custpage_ship_date',
 						type: serverWidget.FieldType.TEXT,
-						label: 'SHIP DATE'
+						label: 'SHIP VIA'
 					});
 					sublist.addField({
 						id: 'custpage_customer',
@@ -464,11 +504,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record'],
 													value: orderDate
 												});
 											}
-											if (validateValue(ShipDate)) {
+											if (validateValue(shipMethodVal)) {
 												sublist.setSublistValue({
 													id: 'custpage_ship_date',
 													line: r,
-													value: ShipDate
+													value: shipMethodVal
 												});
 											}
 											if (validateValue(CustomerName)) {
@@ -524,11 +564,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record'],
 													value: orderDate
 												});
 											}
-											if (validateValue(ShipDate)) {
+											if (validateValue(shipMethodVal)) {
 												sublist.setSublistValue({
 													id: 'custpage_ship_date',
 													line: r,
-													value: ShipDate
+													value: shipMethodVal
 												});
 											}
 											if (validateValue(CustomerName)) {
@@ -1113,7 +1153,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record'],
 			}
 		}
 
-		//This function returns the item id if available  
+		//This function returns the item id if available
 		function getItemId(itemName) {
 			try {
 				var itemSearchObj = search.create({

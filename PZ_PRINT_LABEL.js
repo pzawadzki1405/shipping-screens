@@ -24,7 +24,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					var selectOrderNo = context.request.parameters.selectOrderNo;
 					var waveNumber = context.request.parameters.waveNumber;
 
-					//********Added PERFORMANCE - Przemyslaw Zawadzki******////
+					//********Added for test - Przemyslaw Zawadzki******////
 					var userName = runtime.getCurrentUser().name;
 					var userID = runtime.getCurrentUser().id;
 					log.debug("userName -->: ", userName);
@@ -56,7 +56,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						catch (err){
  						 log.error("Error in run performance", err);
  					 }
-					 //********Added PERFORMANCE - Przemyslaw Zawadzki******////
+					 //********Added for test - Przemyslaw Zawadzki******////
 
 
 					if (allowRepeating == true || allowRepeating == 'true') {
@@ -68,13 +68,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						title: 'Print Integrated Shipping Labels'
 					});
 
-					//********Added PERFORMANCE - Przemyslaw Zawadzki******////
+					//********Added for test - Przemyslaw Zawadzki******////
 					form.addField({
 						id: 'custpage_username',
 						type: serverWidget.FieldType.LABEL,
 						label: 'Performance: ' + strOutput
 					});
-					//********Added PERFORMANCE - Przemyslaw Zawadzki******////
+					//********Added for test - Przemyslaw Zawadzki******////
 					form.addField({
 						id: 'custpage_item_barcode',
 						type: serverWidget.FieldType.TEXT,
@@ -712,6 +712,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 							functionName: 'skipToNext()'
 						});
 					}
+					form.addButton({
+						id: 'custpage_print2',
+						label: 'Print2',
+						functionName: 'printLabel2()'
+					});
 
 					form.addPageLink({
 						type: serverWidget.FormPageLinkType.CROSSLINK,
@@ -771,7 +776,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						name: 'name',
 						join: 'file',
 						operator: 'haskeywords',
-						values: ["MN CS PRINT LABEL VALIDATION_v7.js"]
+						values: ["PZ_Print_label_func.js"]
 					}]
 				});
 
