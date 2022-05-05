@@ -59,6 +59,19 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					 //********Added for test - Przemyslaw Zawadzki******////
 
 
+					 //////////////SHIPPING METHOD IMAGES //////////////////////////////////////////
+					 var img_wheel_cover = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714883&c=6241176&h=ulWEYTSLwUDZp2IRU1AiV85nu2TxdRM5Dd35uXm8NkiRfrkF";
+					 var img_bumper_usps = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714884&c=6241176&h=Y74SzvhnTXbTsKumMt0aApfDAfuJzUJKYJ9OgCbQ_6lmHuwX";
+					 var img_usps_first = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714885&c=6241176&h=gZP-5d1qhpBfNfw1s55Bb8hZmeIUToB42sJcINLLLEh3egym";
+					 var img_frogum = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714886&c=6241176&h=3NKs8hc--T_M75VAvyI3IjRazNr70_r4Kfu8WCoDClKQECCP";
+					 var img_bumper_fedex = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714887&c=6241176&h=yZcBmAsA7zuGa7205CnLLwzu10BrM7ErSSJqbEp54bLmJMy5";
+					 var img_crossbar = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714888&c=6241176&h=bgOaXxclvScW5StJLU-tQR_uGtrULuHEptCufrb7mSm_5fq7";
+					 var img_wind_deflector = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714889&c=6241176&h=ylnTedZSE0GvYdbW4Kd-w2Jc5pUte0qNxvQe7Ty6ys-r6su-";
+
+
+					 ///////////////////////////////////////////////////////////////////////////////
+
+
 					if (allowRepeating == true || allowRepeating == 'true') {
 						allowRepeating = 'T';
 					} else {
@@ -75,6 +88,17 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						label: 'Performance: ' + strOutput
 					});
 					//********Added for test - Przemyslaw Zawadzki******////
+					form.addField({
+						id: 'custpage_user_id',
+						type: serverWidget.FieldType.TEXT,
+						label: 'abc: '
+					}).updateDisplayType({
+						displayType: serverWidget.FieldDisplayType.HIDDEN
+					});
+					form.updateDefaultValues({
+						custpage_user_id: userID
+					});
+
 					form.addField({
 						id: 'custpage_item_barcode',
 						type: serverWidget.FieldType.TEXT,
@@ -251,7 +275,14 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 							type: serverWidget.FieldType.TEXT,
 							label: 'ITEM WEIGHT'
 						});
+						sublist.addField({
+							id: 'custpage_item_class',
+							type: serverWidget.FieldType.TEXT,
+							label: 'ITEM CLASS'
+						});
 					}
+
+
 					if (validateValue(itemName)) {
 						form.updateDefaultValues({
 							custpage_item_barcode: itemName
@@ -290,6 +321,29 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 							displayType: serverWidget.FieldDisplayType.HIDDEN
 						});
 					}
+					var shipping_notes = form.addField({
+							id: 'custpage_shipping_notes',
+							type: serverWidget.FieldType.TEXTAREA,
+							label: 'Shipping Notes',
+							//displayType: serverWidget.FieldDisplayType.READONLY
+							///container: 'group_notes'
+					});
+					form.updateDefaultValues({
+						custpage_shipping_notes: "this is some shipping notes about packing method"
+					});
+					shipping_notes.updateDisplayType({
+						displayType: serverWidget.FieldDisplayType.INLINE
+					});
+					form.addField({
+						id: 'custpage_image',
+						type: serverWidget.FieldType.INLINEHTML,
+						label: 'image'
+					});
+				  // add the url of the image
+				  var img = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714878&c=6241176&h=SZV8GwjBosmcu_JCHiwqr5lD7seuXlinZbEBe3IsxKAV9q_t"; // Use the url in file cabinet
+
+				  var image_tag = '<img src="'+img+'"/>';
+				  //form.updateDefaultValues({custpage_image:image_tag});
 
 					var messageVal = '';
 					var itemFullfillmentIdArray = [];
@@ -483,6 +537,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 												summary: "GROUP",
 												label: "Item Quantity"
 											});
+											var itemClass = ifSearchObj[r].getValue({
+												name: "class",
+												join: "item",
+												summary: "GROUP",
+												label: "Item Class"
+											});
 											if (itemQuantity) {
 												if (parseFloat(itemQuantity) > 1) {
 													form.updateDefaultValues({
@@ -544,6 +604,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 														line: r,
 														value: itemName
 													});
+
 												}
 											}
 											if (uniqueItemFulfillId.length == 1) {
@@ -616,6 +677,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 													value: itemHeight
 												});
 											}
+											if (validateValue(itemClass)) {
+												sublist.setSublistValue({
+													id: 'custpage_item_class',
+													line: r,
+													value: itemClass
+												});
+											}
 											if (validateValue(itemWeight)) {
 												sublist.setSublistValue({
 													id: 'custpage_item_weight',
@@ -629,6 +697,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 													line: r,
 													value: itemNameVal
 												});
+												log.debug("item name: ", itemNameVal)
+												if(itemNameVal == '5025093F'){
+													var img = "https://6241176.app.netsuite.com/core/media/media.nl?id=2714879&c=6241176&h=wv7dIN6h0cVEZkAOgVynKBMysFwghzNxRhLBFMcIeOrl72CS"; // Use the url in file cabinet
+												  var image_tag = '<img src="'+img+'"/>';
+												  form.updateDefaultValues({custpage_image:image_tag});
+												}
 											}
 											if (validateValue(itemNameVal)) {
 												sublist.setSublistValue({
@@ -668,6 +742,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 										}
 										//itemFullfillmentIdArray.push(ifIdVal);
 										itemFullfillmentIdArray.push(lineId);
+
 
 										log.debug('itemFullfillmentIdArray', JSON.stringify(itemFullfillmentIdArray))
 									}
@@ -734,6 +809,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			}
 
 		}
+
+
 
 		function searchItemNameAlias(itemName) {
 
@@ -1070,6 +1147,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 									summary: "GROUP",
 									label: "Line ID"
 								}),
+								search.createColumn({
+									name: "class",
+									join: "item",
+									summary: "GROUP",
+									label: "Item Class"
+								})
 							]
 						});
 						var newSearchResults = newItemfulfillmentSearchObj.run().getRange({

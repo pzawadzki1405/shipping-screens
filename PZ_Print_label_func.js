@@ -5,8 +5,15 @@
  */
 var PRINT_SEQUENCE_NOT_LAST = "1";
 var PRINT_SEQUENCE_LAST = "2";
+
+var LOCKED_NONE = "1";
+var LOCKED_WRONG = "2";
+var LOCKED_CORRECT = "3";
+
 define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dialog'],
 	function(url, currentRecord, record, search, https, dialog) {
+
+
 		function printLabel() {
 			try {
 				var lineIndex = -1;
@@ -81,7 +88,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					console.log("linkVal", linkVal);
 					var resetPage = url.resolveScript({
 						scriptId: 'customscript_pz_print_label',
-						deploymentId: 'PZ_print_label_deploy1'
+						deploymentId: 'customdeploycustomscript_pz_print_label'
 					});
 					resetPage += "&waveNumber=" + waveNumber;
 					var currentUrl = window.location.origin;
@@ -143,74 +150,174 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 		function printLabel2() {
 
-				var testfulID = 7474165;
-				checkWhoLocked("Przemyslaw Zawadzki", testfulID);
+			// var lineCount = currRec.getLineCount({
+			// 	sublistId: 'custpage_print_label'
+			// });
+			// if (lineCount > 0) {
+			// 	var ifIdVal = currRec.getSublistValue({
+			// 		sublistId: 'custpage_print_label',
+			// 		fieldId: 'custpage_item_fullfilment_hiden',
+			// 		line: 0
+			// 	});
+			// 	var userID = currRec.getSublistValue({
+			// 		sublistId: 'custpage_userID',
+			// 		fieldId: 'custpage_item_fullfilment_hiden',
+			// 		line: 0
+			// 	});
+		  // }
+			// else{
+			// 	alert('no order selected');
+			// }
+			var currRec = currentRecord.get();
+			var userID = currRec.getValue({
+				fieldId: 'custpage_user_id',
+			});
+			console.log("user ID ", userID);
+
+			var lineCount = currRec.getLineCount({
+				sublistId: 'custpage_print_label'
+			});
+			console.log("LINE COUNT ", lineCount);
+			if (lineCount > 0) {
+				var ifIdVal = currRec.getSublistValue({
+					sublistId: 'custpage_print_label',
+					fieldId: 'custpage_item_fullfilment_hiden',
+					line: 0
+				});
+				console.log("FULFILEMENT ID ", ifIdVal);
+				switch(checkWhoLocked2(userID, ifIdVal)){
+					case LOCKED_NONE:
+					alert('FULFILEMENT is not locked');
+					break;
+					case LOCKED_WRONG:
+					alert('FULFILLMENT is not locked by your account');
+					break;
+					case LOCKED_CORRECT:
+					printLabel();
+					//alert('FULFILLMENT is CORRECT, locked by you');
+					break;
+					default:
+					alert('ERROR during locking order');
+					break;
+
+				}
+			}
+			else{
+				alert('No order selected');
+			}
+
+
+				//var testfulID = 7550091;
+
 
 		}
 
-		function checkWhoLocked(userName, fulfillmentID){
+		// function checkWhoLocked(userName, fulfillmentID){
+		//
+		// 	// var systemnotesFilter = search.createFilter({
+		// 	// 					 name: 'field',
+		// 	// 					 join: 'systemnotes',
+		// 	// 					 operator: search.Operator.ANYOF,
+		// 	// 					 values: 'custbody_open_in_print_label'
+		// 	// });
+		//
+		// 	var newItemfulfillmentSearchObj = search.create({
+		// 		type: "itemfulfillment",
+		// 		filters: [
+		// 			["internalid", "anyof", fulfillmentID],
+		// 			"AND", ["custbody_open_in_print_label", "is", ["T"]],
+		// 			"AND", ["systemnotes.newvalue", "is", ["T"]],
+		// 			//"AND", ["systemnotes.field", "ANYOF", ["Open in print label"]]
+		// 			"AND", ["systemnotes.field", "ANYOF", ['custbody_open_in_print_label', "Open in print label"]]
+		// 			//systemnotesFilter
+		// 			//"AND", ["status", "anyof", "ItemShip:B"]
+		// 		],
+		// 		columns: [
+		// 			search.createColumn({
+		// 				name: "internalid",
+		// 				sort: search.Sort.ASC,
+		// 				label: "Internal ID"
+		// 			}),
+		// 			search.createColumn({
+		// 				name: "trandate",
+		// 				sort: search.Sort.DESC,
+		// 				label: "Date"
+		// 			}),
+		// 			search.createColumn({
+		// 				name: "status",
+		// 				label: "status"
+		// 			}),
+		// 			search.createColumn({
+		// 				name: "newvalue",
+		// 				join: "systemnotes",
+		// 				label: "Field"
+		// 			}),
+		// 			search.createColumn({
+		// 				name: "field",
+		// 				join: "systemnotes",
+		// 				label: "Field"
+		// 			}),
+		// 			search.createColumn({
+		// 				name: "name",
+		// 				join: "systemnotes",
+		// 				label: "Namer"
+		// 			})]
+		// 		});
+		// 		var newSearchResults = newItemfulfillmentSearchObj.run().getRange({
+		// 			start: 0,
+		// 			end: 15
+		// 		});
+		// 		console.log("locked orders length: ", newSearchResults.length, " results: ", JSON.stringify(newSearchResults));
+		// }
 
-			// var systemnotesFilter = search.createFilter({
-			// 					 name: 'field',
-			// 					 join: 'systemnotes',
-			// 					 operator: search.Operator.ANYOF,
-			// 					 values: 'custbody_open_in_print_label'
-			// });
 
-			var newItemfulfillmentSearchObj = search.create({
-				type: "itemfulfillment",
-				filters: [
-					["internalid", "anyof", fulfillmentID],
-					"AND", ["custbody_open_in_print_label", "is", ["T"]],
-					"AND", ["systemnotes.newvalue", "is", ["T"]],
-					//"AND", ["systemnotes.field", "ANYOF", ["Open in print label"]]
-					"AND", ["systemnotes.field", "ANYOF", ['custbody_open_in_print_label', "Open in print label"]]
-					//systemnotesFilter
-					//"AND", ["status", "anyof", "ItemShip:B"]
-				],
-				columns: [
-					search.createColumn({
-						name: "internalid",
-						sort: search.Sort.ASC,
-						label: "Internal ID"
-					}),
-					search.createColumn({
-						name: "trandate",
-						sort: search.Sort.DESC,
-						label: "Date"
-					}),
-					search.createColumn({
-						name: "status",
-						label: "status"
-					}),
-					search.createColumn({
-						name: "newvalue",
-						join: "systemnotes",
-						label: "Field"
-					}),
-					search.createColumn({
-						name: "field",
-						join: "systemnotes",
-						label: "Field"
-					}),
-					search.createColumn({
-						name: "name",
-						join: "systemnotes",
-						label: "Namer"
-					})]
-				});
-				var newSearchResults = newItemfulfillmentSearchObj.run().getRange({
+		function checkWhoLocked2(userName, fulfillmentID){
+			try{
+				var mySearch = search.load({ id: 'customsearch5005'});
+
+				var defaultFilters = mySearch.filters;		//existing filters
+				var customFilters = search.createFilter({	//NEW FILTER
+				 					 name: 'internalid',
+				 					 operator: search.Operator.ANYOF,
+				 					 values: fulfillmentID
+				 });
+				defaultFilters.push(customFilters);				//push to existing filters object
+				mySearch.filters = defaultFilters;				//copy filters to search
+
+				var results_search = mySearch.run();
+				var results_search_array = results_search.getRange({
 					start: 0,
-					end: 15
+					end: 20
 				});
-				console.log("locked orders length: ", newSearchResults.length, " results: ", JSON.stringify(newSearchResults));
+
+
+				console.log("locked orders length: ", results_search_array.length, " results: ", JSON.stringify(results_search_array));
+				//console.log("order id: ", results_search_array[0].getValue(results_search.columns[0]), " is locked by ", results_search_array[0].getValue(results_search.columns[1]));
+				//if(results_search_array.length == 0) return Locked.NOLOCKED;
+				if (results_search_array.length > 0){
+					if(results_search_array[0].getValue(results_search.columns[1]) == userName){
+						return LOCKED_CORRECT;
+					}
+					else{
+						return LOCKED_WRONG;
+					}
+				}
+				else{
+					return LOCKED_NONE;
+				}
+
+			}
+			catch (err){
+				console.log("Error in checkWhoLocked ", err);
+			}
+
 		}
 
 		function resetButton() {
 			var currRec = currentRecord.get();
 			var resetPage = url.resolveScript({
-				scriptId: 'customscript_mn_sl_print_lable_v7',
-				deploymentId: 'customdeploy1'
+				scriptId: 'customscript_pz_print_label',
+				deploymentId: 'customdeploycustomscript_pz_print_label'
 			});
 			var lineCount = currRec.getLineCount({
 				sublistId: 'custpage_print_label'
@@ -365,8 +472,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					if (itemName) {
 						if (waveNumber) {
 							var suiteletLink = url.resolveScript({
-								scriptId: 'customscript_mn_sl_print_lable_v7',
-								deploymentId: 'customdeploy1'
+								scriptId: 'customscript_pz_print_label',
+								deploymentId: 'customdeploycustomscript_pz_print_label'
 							});
 							suiteletLink += '&itemName=' + itemName;
 							suiteletLink += '&carrierVal=' + carrierVal;
@@ -444,7 +551,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						line: 0
 					});
 					if (ifIdVal) {
-						if (scannedItemsCount == lineCount) {
+						//if (scannedItemsCount == lineCount) {					//////////////????????????????????????????????????????????????????????????????????????????????????
 							var updatedFulfillment = record.submitFields({
 								type: "itemfulfillment",
 								id: ifIdVal,
@@ -453,16 +560,16 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 								}
 							});
 							console.log(title + "updatedFulfillment TRUE", updatedFulfillment);
-						} else {
-							var updatedFulfillment = record.submitFields({
-								type: "itemfulfillment",
-								id: ifIdVal,
-								values: {
-									custbody_open_in_print_label: false
-								}
-							});
-							console.log(title + "updatedFulfillment FALSE", updatedFulfillment);
-						}
+						//} else {
+							// var updatedFulfillment = record.submitFields({
+							// 	type: "itemfulfillment",
+							// 	id: ifIdVal,
+							// 	values: {
+							// 		custbody_open_in_print_label: false
+							// 	}
+							// });
+							// console.log(title + "updatedFulfillment FALSE", updatedFulfillment);
+						//}
 					}
 				}
 			} catch (e) {
@@ -495,8 +602,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				});
 				if (allowRepeating == false || allowRepeating == 'F') {
 					var suiteletLink = url.resolveScript({
-						scriptId: 'customscript_mn_sl_print_lable_v7',
-						deploymentId: 'customdeploy1'
+						scriptId: 'customscript_pz_print_label',
+						deploymentId: 'customdeploycustomscript_pz_print_label'
 					});
 					suiteletLink += '&itemName=' + itemName;
 					suiteletLink += '&carrierVal=' + carrierVal;
@@ -716,7 +823,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		}
 		return {
 			fieldChanged: fieldChanged,
-			checkWhoLocked: checkWhoLocked,
+			checkWhoLocked2: checkWhoLocked2,
 			printLabel: printLabel,
 			printLabel2: printLabel2,
 			resetButton: resetButton,
