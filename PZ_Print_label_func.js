@@ -93,6 +93,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					resetPage += "&waveNumber=" + waveNumber;
 					var currentUrl = window.location.origin;
 					window.onbeforeunload = null;
+
+
+					///////PRINT Label
+
 					if (allowRepeating != true) {
 						var res = linkVal.split("&auxtrans=");
 						record.submitFields({
@@ -135,6 +139,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 							}, 8000);
 						});
 					}
+
+					///////PRINT Label
+
+
 				} else {
 					// dialog.alert({
 					// 	title: 'Wave Number is not selected!',
@@ -147,6 +155,275 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			}
 		}
 
+		function printPDF() {
+	    //alert('function called')
+	    var recordObj = currentRecord.get();
+	    var itemFulfilmentId = recordObj.getSublistValue({
+	      sublistId: 'custpage_print_label',
+	      fieldId: 'custpage_item_fullfilment_hiden',
+	      line: 0,
+	    });
+
+	    var isEmptyField = false;
+	    var lineCount = recordObj.getLineCount('custpage_print_label');
+	    for (var i = 0; i < lineCount; i++) {
+	      var itemName = recordObj.getSublistValue({
+	        sublistId: 'custpage_print_label',
+	        fieldId: 'custpage_scan_item_barcode',
+	        line: i,
+	      });
+
+	      if (!itemName) {
+	        isEmptyField = true;
+	        break;
+	      }
+	    }
+
+	    if (isEmptyField == true) {
+	      alert('Please scan all the items before printing label.');
+	      return false;
+	    }
+
+	    /*To capture item quantity*/
+
+	    var isEmptyItemQtyField = false;
+	    var isQtyMissmatch = false;
+
+	    for (var i = 0; i < lineCount; i++) {
+	      var itemQty = recordObj.getSublistValue({
+	        sublistId: 'custpage_print_label',
+	        fieldId: 'custpage_item_quantity_to_capture',
+	        line: i,
+	      });
+
+	      var totalQTY = recordObj.getSublistValue({
+	        sublistId: 'custpage_print_label',
+	        fieldId: 'custpage_item_quantity',
+	        line: i,
+	      });
+	      if (!itemQty) {
+	        isEmptyItemQtyField = true;
+	      }
+	      if (Number(itemQty) != Number(totalQTY)) {
+	        isQtyMissmatch = true;
+	      }
+	    }
+
+	    if (isEmptyItemQtyField == true) {
+	      alert('Please the quantity in all the lines before printing label.');
+	      return false;
+	    }
+	    if (isEmptyItemQtyField == true) {
+	      alert('Total quantity and picked quantity should be same.');
+	      return false;
+	    }
+	    //alert('itemFulfilmentId ' + itemFulfilmentId);
+	    var waveNumber = recordObj.getValue({
+	      fieldId: 'custpage_wave_number',
+	    });
+	    //alert('waveNumber ' + waveNumber);
+	    var itemQuantity = recordObj.getSublistValue({
+	      sublistId: 'custpage_print_label',
+	      fieldId: 'custpage_item_quantity',
+	      line: 0,
+	    });
+	    //alert('itemQuantity ' + itemQuantity);
+	    /*if (parseFloat(itemQuantity) > 1) {
+	                 alert("Please note that an Item in lines has Quantity greater than 1.");
+	             }*/
+	    /*record.submitFields({
+	                 type: "itemfulfillment",
+	                 id: itemFulfilmentId,
+	                 values: {
+	                     shipstatus: 'C',
+	                     custbody_label_printed: true
+	                 },
+	             });*/
+	    var pdfFile = search.lookupFields({
+	      type: 'itemfulfillment',
+	      id: itemFulfilmentId,
+	      columns: ['custbody_av40_label_pdf'],
+	    });
+	    //alert('pdfFile ' + pdfFile.custbody_av40_label_pdf[0].value);
+	    //alert('pdfFile length ' + pdfFile.custbody_av40_label_pdf.length);
+
+	    if (pdfFile.custbody_av40_label_pdf.length < 1) {
+	      alert('The AV40 lable PDF is not available.');
+	      return false;
+	    }
+	    var suiteletURL = url.resolveScript({
+	      scriptId: 'customscript_aby_open_pdf_file',
+	      deploymentId: 'customdeploy_aby_open_pdf_file_deploy',
+	      returnExternalUrl: false,
+	      params: {
+	        pdffileid: pdfFile.custbody_av40_label_pdf[0].value,
+	      },
+	    });
+	    //alert('suiteletURL ' + suiteletURL);
+	    window.open(suiteletURL);
+	    record.submitFields({
+	      type: 'itemfulfillment',
+	      id: itemFulfilmentId,
+	      values: {
+	        shipstatus: 'C',
+	        custbody_label_printed: true,
+	      },
+	    });
+	    var resetPage = url.resolveScript({
+	      scriptId: 'customscript_pz_print_label',
+	      deploymentId: 'customdeploycustomscript_pz_print_label',
+	    });
+	    resetPage += '&waveNumber=' + waveNumber;
+	    //alert('resetPage ' + resetPage);
+	    var currentUrl = window.location.origin;
+	    window.onbeforeunload = null;
+	    window.location.href = currentUrl + resetPage;
+	  }
+
+		function printLabelPDF() {
+
+			try {
+				var lineIndex = -1;
+				var currRec = currentRecord.get();
+				var waveNumber = currRec.getValue({
+					fieldId: 'custpage_wave_number'
+				});
+				if (waveNumber) {
+					var allowRepeating = currRec.getValue({
+						fieldId: 'custpage_allow_repeating'
+					});
+
+					if (allowRepeating != true) {
+
+						var numLines = currRec.getLineCount({
+							sublistId: 'custpage_print_label'
+						});
+						for (var r = 0; r < numLines; r++) {
+							var scannedItem = currRec.getSublistValue({
+								sublistId: 'custpage_print_label',
+								fieldId: 'custpage_scan_item_barcode',
+								line: r
+							});
+							var printVal = currRec.getSublistValue({
+								sublistId: 'custpage_print_label',
+								fieldId: 'custpage_print_fulfillment',
+								line: r
+							});
+							console.log("scannedItem", scannedItem);
+
+							if (printVal == true && lineIndex == -1) {
+								lineIndex = r
+							}
+							if (printVal == true) {
+								if ((scannedItem == "" || scannedItem == null || scannedItem == undefined)) {
+									alert("Please scan all selected items");
+									return false;
+								}
+							}
+						}
+
+						if (lineIndex == -1) {
+							alert("Please select atleast one item");
+							return false;
+						}
+						console.log("lineIndex", lineIndex);
+						var linkVal = currRec.getSublistValue({
+							sublistId: 'custpage_print_label',
+							fieldId: 'custpage_link',
+							line: lineIndex
+						});
+					} else {
+						var numLines = currRec.getLineCount({
+							sublistId: 'custpage_print_label'
+						});
+						for (var r = 0; r < numLines; r++) {
+							var printVal = currRec.getSublistValue({
+								sublistId: 'custpage_print_label',
+								fieldId: 'custpage_print_fulfillment',
+								line: r
+							});
+							if (printVal == true) {
+								var linkVal = currRec.getSublistValue({
+									sublistId: 'custpage_print_label',
+									fieldId: 'custpage_link',
+									line: r
+								});
+								break;
+							}
+						}
+					}
+					console.log("linkVal", linkVal);
+					// var resetPage = url.resolveScript({
+					// 	scriptId: 'customscript_pz_print_label',
+					// 	deploymentId: 'customdeploycustomscript_pz_print_label'
+					// });
+					// resetPage += "&waveNumber=" + waveNumber;
+					// var currentUrl = window.location.origin;
+					// window.onbeforeunload = null;
+
+
+					///////PRINT Label
+					var recordObj = currentRecord.get();
+			    var itemFulfilmentId = recordObj.getSublistValue({
+			      sublistId: 'custpage_print_label',
+			      fieldId: 'custpage_item_fullfilment_hiden',
+			      line: 0,
+			    });
+					var pdfFile = search.lookupFields({
+			      type: 'itemfulfillment',
+			      id: itemFulfilmentId,
+			      columns: ['custbody_av40_label_pdf'],
+			    });
+			    //alert('pdfFile ' + pdfFile.custbody_av40_label_pdf[0].value);
+			    //alert('pdfFile length ' + pdfFile.custbody_av40_label_pdf.length);
+
+			    if (pdfFile.custbody_av40_label_pdf.length < 1) {
+			      alert('The AV40 lable PDF is not available.');
+			      return false;
+			    }
+			    var suiteletURL = url.resolveScript({
+			      scriptId: 'customscript_aby_open_pdf_file',
+			      deploymentId: 'customdeploy_aby_open_pdf_file_deploy',
+			      returnExternalUrl: false,
+			      params: {
+			        pdffileid: pdfFile.custbody_av40_label_pdf[0].value,
+			      },
+			    });
+			    //alert('suiteletURL ' + suiteletURL);
+			    window.open(suiteletURL);
+			    record.submitFields({
+			      type: 'itemfulfillment',
+			      id: itemFulfilmentId,
+			      values: {
+			        shipstatus: 'C',
+			        custbody_label_printed: true,
+			      },
+			    });
+			    var resetPage = url.resolveScript({
+			      scriptId: 'customscript_pz_print_label',
+			      deploymentId: 'customdeploycustomscript_pz_print_label',
+			    });
+			    resetPage += '&waveNumber=' + waveNumber;
+			    //alert('resetPage ' + resetPage);
+			    var currentUrl = window.location.origin;
+			    window.onbeforeunload = null;
+			    window.location.href = currentUrl + resetPage;
+
+					///////PRINT Label
+
+
+				} else {
+					// dialog.alert({
+					// 	title: 'Wave Number is not selected!',
+					// 	message: 'Please select wave number before clicking on Print button.'
+					// });
+					alert('Please select wave number before clicking on Print button.');
+				}
+			} catch (err) {
+				console.log("Error in printLabel", err);
+			}
+
+		}
 
 		function printLabel2() {
 
@@ -170,7 +447,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			// }
 			var currRec = currentRecord.get();
 			var userID = currRec.getValue({
-				fieldId: 'custpage_user_id',
+				fieldId: 'custpage_user_id'
+			});
+			var avTracking = currRec.getValue({
+				fieldId: 'custpage_av_tracking'
 			});
 			console.log("user ID ", userID);
 
@@ -193,8 +473,15 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					alert('FULFILLMENT is not locked by your account');
 					break;
 					case LOCKED_CORRECT:
-					printLabel();
-					//alert('FULFILLMENT is CORRECT, locked by you');
+						if (avTracking == '' || avTracking == undefined || avTracking == null || avTracking == "none" || avTracking == "- None -"){
+								console.log("IF avTracking ", avTracking);
+								printLabel();
+						}
+						else{
+							console.log("ELSE avTracking ", avTracking);
+							printLabelPDF();
+						}
+						//alert('FULFILLMENT is CORRECT, locked by you');
 					break;
 					default:
 					alert('ERROR during locking order');
@@ -322,6 +609,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			var lineCount = currRec.getLineCount({
 				sublistId: 'custpage_print_label'
 			});
+			var waveNumber = currRec.getValue({
+				fieldId: 'custpage_wave_number'
+			});
+			resetPage += '&waveNumber=' + waveNumber;
 			if (lineCount > 0) {
 				var ifIdVal = currRec.getSublistValue({
 					sublistId: 'custpage_print_label',
@@ -360,6 +651,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 		function fieldChanged(scriptContext) {
 			var title = " fieldChanged ";
+			console.log("entering fieldChanged function");
 			try {
 				var currRec = scriptContext.currentRecord;
 
@@ -378,7 +670,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						fieldId: 'custpage_scan_item_barcode'
 					});
 
-					if (scanedItem != itemCode && scanedItem != itemUpcCode) {
+					if (scanedItem != itemUpcCode) {
 						alert("Invalid Item.");
 						currRec.setCurrentSublistValue({
 							sublistId: 'custpage_print_label',
@@ -826,6 +1118,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			checkWhoLocked2: checkWhoLocked2,
 			printLabel: printLabel,
 			printLabel2: printLabel2,
+			printLabelPDF: printLabelPDF,
 			resetButton: resetButton,
 			pageInit: pageInit,
 			skipToNext: skipToNext

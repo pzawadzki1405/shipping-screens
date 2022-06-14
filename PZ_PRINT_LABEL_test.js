@@ -135,13 +135,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						displayType: serverWidget.FieldDisplayType.HIDDEN
 					});
 					form.addField({
-						id: 'custpage_AV_Tracking',
-						type: serverWidget.FieldType.TEXT,
-						label: 'AV Tracking'
-					}).updateDisplayType({
-						displayType: serverWidget.FieldDisplayType.HIDDEN
-					});
-					form.addField({
 						id: 'custpage_last_selected_line_index',
 						type: serverWidget.FieldType.TEXT,
 						label: 'LAST SELECTED LINE INDEX'
@@ -548,11 +541,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 												summary: "GROUP",
 												label: "Item Description"
 											});
-											var itemAVTracking = ifSearchObj[r].getValue({
-												name: "custbody_av_tracking_number_if",
-												summary: "GROUP",
-												label: "AV Tracking Number"
-											});
 											if (itemQuantity) {
 												if (parseFloat(itemQuantity) > 1) {
 													form.updateDefaultValues({
@@ -607,37 +595,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 											}
 										}
 										if (allowRepeating == 'F') {
-											if (validateValue(itemNameVal)) {
-												sublist.setSublistValue({
-													id: 'custpage_item_code',
-													line: r,
-													value: itemNameVal
-												});
-
-												log.debug("item name: ", itemNameVal)
-												var img = shippingNotesImg(shipMethodVal, itemClass, itemNameVal); // Use the url in file cabinet
-												var image_tag = '<img src="'+img+'"/>';
-												form.updateDefaultValues({custpage_image:image_tag});
-
-												if (validateValue(itemAVTracking)){
-													form.updateDefaultValues({custpage_AV_Tracking:itemAVTracking});
-													form.updateDefaultValues({custpage_shipping_notes:itemAVTracking});
-												}
-												else{
-													form.updateDefaultValues({custpage_AV_Tracking:"none"});
-													form.updateDefaultValues({custpage_shipping_notes:"none"});
-												}
-
-
-											}
-											if (validateValue(itemUpcCode)) {
-												sublist.setSublistValue({
-													id: 'custpage_upc_code',
-													line: r,
-													value: itemUpcCode
-												});
-												//itemName = itemUpcCode;
-											}
 											if (itemName == itemNameVal || itemName == itemUpcCode) {
 												if (validateValue(itemName)) {
 													sublist.setSublistValue({
@@ -742,6 +699,18 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 											if (validateValue(itemNameVal)) {
 												sublist.setSublistValue({
+													id: 'custpage_item_code',
+													line: r,
+													value: itemNameVal
+												});
+												log.debug("item name: ", itemNameVal)
+												var img = shippingNotesImg(shipMethodVal, itemClass, itemNameVal); // Use the url in file cabinet
+												var image_tag = '<img src="'+img+'"/>';
+												form.updateDefaultValues({custpage_image:image_tag});
+
+											}
+											if (validateValue(itemNameVal)) {
+												sublist.setSublistValue({
 													id: 'custpage_item_code_hidden',
 													line: r,
 													value: itemNameVal
@@ -754,7 +723,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 													value: itemQuantity
 												});
 											}
-
+											if (validateValue(itemUpcCode)) {
+												sublist.setSublistValue({
+													id: 'custpage_upc_code',
+													line: r,
+													value: itemUpcCode
+												});
+											}
 											if (validateValue(itemUpcCode)) {
 												sublist.setSublistValue({
 													id: 'custpage_upc_code_hidden',
@@ -1216,11 +1191,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 									label: "Open in Print Label"
 								}),
 								search.createColumn({
-									name: "custbody_av_tracking_number_if",
-									summary: "GROUP",
-									label: "AV Tracking Number"
-								}),
-								search.createColumn({
 									name: "shipmethod",
 									summary: "GROUP",
 									label: "Ship Via"
@@ -1390,8 +1360,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				var itemSearchObj = search.create({
 					type: "item",
 					filters: [
-						["upccode", "is", itemName]
-						//"OR", ["name", "is", itemName]
+						["upccode", "is", itemName],
+						"OR", ["name", "is", itemName]
 					],
 					columns: [
 						search.createColumn({
