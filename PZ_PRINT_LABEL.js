@@ -135,7 +135,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						displayType: serverWidget.FieldDisplayType.HIDDEN
 					});
 					form.addField({
-						id: 'custpage_AV_Tracking',
+						id: 'custpage_av_tracking',
 						type: serverWidget.FieldType.TEXT,
 						label: 'AV Tracking'
 					}).updateDisplayType({
@@ -279,6 +279,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 							type: serverWidget.FieldType.TEXT,
 							label: 'ITEM CLASS'
 						});
+						sublist.addField({
+							id: 'custpage_etail',
+							type: serverWidget.FieldType.TEXT,
+							label: 'eTail'
+						});
 					}
 
 
@@ -320,19 +325,20 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 							displayType: serverWidget.FieldDisplayType.HIDDEN
 						});
 					}
+					var shipping_notes_text = "Shipping notes";
 					var shipping_notes = form.addField({
 							id: 'custpage_shipping_notes',
-							type: serverWidget.FieldType.TEXTAREA,
+							type: serverWidget.FieldType.INLINEHTML,
 							label: 'Shipping Notes',
 							//displayType: serverWidget.FieldDisplayType.READONLY
 							///container: 'group_notes'
 					});
 					form.updateDefaultValues({
-						custpage_shipping_notes: "this is some shipping notes about packing method"
+						custpage_shipping_notes: '<font size="3">'+shipping_notes_text+'</font>'
 					});
-					shipping_notes.updateDisplayType({
-						displayType: serverWidget.FieldDisplayType.INLINE
-					});
+					// shipping_notes.updateDisplayType({
+					// 	displayType: serverWidget.FieldDisplayType.INLINE
+					// });
 					form.addField({
 						id: 'custpage_image',
 						type: serverWidget.FieldType.INLINEHTML,
@@ -553,6 +559,17 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 												summary: "GROUP",
 												label: "AV Tracking Number"
 											});
+											var orderMemo = ifSearchObj[r].getValue({
+												name: "memo",
+												join: "createdFrom",
+												summary: "GROUP",
+												label: "MEMO"
+											});
+											var orderEtail = ifSearchObj[r].getText({
+												name: "custbody_celigo_etail_channel",
+												summary: "GROUP",
+												label: "eTail"
+											});
 											if (itemQuantity) {
 												if (parseFloat(itemQuantity) > 1) {
 													form.updateDefaultValues({
@@ -620,12 +637,14 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 												form.updateDefaultValues({custpage_image:image_tag});
 
 												if (validateValue(itemAVTracking)){
-													form.updateDefaultValues({custpage_AV_Tracking:itemAVTracking});
-													form.updateDefaultValues({custpage_shipping_notes:itemAVTracking});
+													form.updateDefaultValues({custpage_av_tracking:itemAVTracking});
+
+													//shipping_notes_text = shipping_notes_text + "AMAZON CANADA ORDER ";
+													//form.updateDefaultValues({custpage_shipping_notes:shipping_notes_text});
 												}
 												else{
-													form.updateDefaultValues({custpage_AV_Tracking:"none"});
-													form.updateDefaultValues({custpage_shipping_notes:"none"});
+													form.updateDefaultValues({custpage_av_tracking:"none"});
+													//form.updateDefaultValues({custpage_shipping_notes:shipping_notes_text});
 												}
 
 
@@ -636,7 +655,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 													line: r,
 													value: itemUpcCode
 												});
-												//itemName = itemUpcCode;
 											}
 											if (itemName == itemNameVal || itemName == itemUpcCode) {
 												if (validateValue(itemName)) {
@@ -739,6 +757,18 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 													value: itemDescription
 												});
 											}
+											if (validateValue(orderEtail)) {
+												sublist.setSublistValue({
+													id: 'custpage_etail',
+													line: r,
+													value: orderEtail
+												});
+											}
+											if (validateValue(orderMemo) && orderMemo != "- None -") {
+												shipping_notes_text = shipping_notes_text + orderMemo + " ";
+												form.updateDefaultValues({custpage_shipping_notes:'<font size="5"><mark>'+shipping_notes_text+'</mark></font>'});
+											}
+
 
 											if (validateValue(itemNameVal)) {
 												sublist.setSublistValue({
@@ -1264,6 +1294,17 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 									join: "item",
 									summary: "GROUP",
 									label: "Item Class"
+								}),
+								search.createColumn({
+									name: "memo",
+									join: "createdFrom",
+									summary: "GROUP",
+									label: "MEMO"
+								}),
+								search.createColumn({
+									name: "custbody_celigo_etail_channel",
+									summary: "GROUP",
+									label: "eTail"
 								}),
 								search.createColumn({
 									name: "displayname",

@@ -452,6 +452,11 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			var avTracking = currRec.getValue({
 				fieldId: 'custpage_av_tracking'
 			});
+			var shipmethod = currRec.getSublistText({
+				sublistId: 'custpage_print_label',
+				fieldId: 'custpage_ship_date',
+				line: 0
+			});
 			console.log("user ID ", userID);
 
 			var lineCount = currRec.getLineCount({
@@ -478,8 +483,14 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 								printLabel();
 						}
 						else{
-							console.log("ELSE avTracking ", avTracking);
-							printLabelPDF();
+							if((shipmethod == "USPS First-Class Mail®") || (shipmethod == "USPS Priority")){
+								console.log("UPSPS  - ", shipmethod);
+								printLabel();
+							}
+							else{
+								console.log("ELSE avTracking ", avTracking);
+								printLabelPDF();
+							}
 						}
 						//alert('FULFILLMENT is CORRECT, locked by you');
 					break;
