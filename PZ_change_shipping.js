@@ -43,6 +43,45 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						displayType: serverWidget.FieldDisplayType.INLINE
 					});
 
+					var picktaskList = form.addSublist({
+						id: 'custpage_picktasklist',
+						type: serverWidget.SublistType.LIST,
+						label: 'PICK TASK LOW QUANTITY'
+					});
+					picktaskList.addField({
+						id: 'custpage_picktasklist_item',
+						type: serverWidget.FieldType.TEXT,
+						label: 'ITEM NAME'
+					});
+					picktaskList.addField({
+						id: 'custpage_picktasklist_bin',
+						type: serverWidget.FieldType.TEXT,
+						label: 'BIN NUMBER'
+					});
+					picktaskList.addField({
+						id: 'custpage_picktasklist_available',
+						type: serverWidget.FieldType.TEXT,
+						label: 'LOCATION AVAILABLE'
+					});
+					picktaskList.addField({
+						id: 'custpage_picktasklist_date',
+						type: serverWidget.FieldType.TEXT,
+						label: 'NEXT COUNT DATE'
+					});
+					picktaskList.addField({
+						id: 'custpage_picktasklist_itemid',
+						type: serverWidget.FieldType.TEXT,
+						label: 'item id'
+					}).updateDisplayType({
+						displayType: serverWidget.FieldDisplayType.HIDDEN
+					});
+					picktaskList.addField({
+						id: 'custpage_picktasklist_binid',
+						type: serverWidget.FieldType.TEXT,
+						label: 'bin id'
+					}).updateDisplayType({
+						displayType: serverWidget.FieldDisplayType.HIDDEN
+					});
 					//PICK TASK LOW QUANTITY
 
 					var strOutput = "";
@@ -58,6 +97,42 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						log.debug("results_picktask_search_array.length -->: ", results_picktask_search_array.length);
 
 						//FEDEX HOME VAL = 3, USPS PRIORITY = 54
+						for (var i = 0; i < results_picktask_search_array.length; i++){
+							picktaskList.setSublistValue({
+								id: 'custpage_picktasklist_item',
+								line: i,
+								value: results_picktask_search_array[i].getValue(results_picktask_search.columns[0])
+							});
+							picktaskList.setSublistValue({
+								id: 'custpage_picktasklist_bin',
+								line: i,
+								value: results_picktask_search_array[i].getText(results_picktask_search.columns[1])
+							});
+							picktaskList.setSublistValue({
+								id: 'custpage_picktasklist_available',
+								line: i,
+								value: results_picktask_search_array[i].getValue(results_picktask_search.columns[2])
+							});
+							var date = results_picktask_search_array[i].getValue(results_picktask_search.columns[3]);
+							if (!date) date = 0;
+							picktaskList.setSublistValue({
+								id: 'custpage_picktasklist_date',
+								line: i,
+								value: date
+							});
+							picktaskList.setSublistValue({
+								id: 'custpage_picktasklist_itemid',
+								line: i,
+								value: results_picktask_search_array[i].getText(results_picktask_search.columns[4])
+							});
+							picktaskList.setSublistValue({
+								id: 'custpage_picktasklist_binid',
+								line: i,
+								value: results_picktask_search_array[i].getText(results_picktask_search.columns[5])
+							});
+						}
+
+
 
 						for (var i = 0; i < results_picktask_search_array.length; i++){
 								strOutput += 'Item: ' + results_picktask_search_array[i].getValue(results_picktask_search.columns[0]) + ' Bin: ' +
