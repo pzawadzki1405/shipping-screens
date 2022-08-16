@@ -14,8 +14,14 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 	function(url, currentRecord, record, search, https, dialog) {
 
 		function changeShippingMethod(){
+
+
 			log.debug("Enter button method");
 			try{
+
+				//var suiteletURL = "file:///C:/Users/wareh/Downloads/FedEx_Shipping_Label_1659387368195.pdf";
+
+				//subs 2 to USA
 				var subsidiaryId = 2;
 		    var locationId = 3;
 				var accountId = 58;
@@ -93,11 +99,68 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 		}
 
+		function countInterval(){
+
+			try{
+				var currRec = currentRecord.get();
+				var numLines = currRec.getLineCount({
+					sublistId: 'custpage_picktasklist'
+				});
+				for (var i = 0; i < numLines; i++) {
+					var interval = currRec.getSublistValue({
+						sublistId: 'custpage_picktasklist',
+						fieldId: 'custpage_picktasklist_interval',
+						line: i
+					});
+					if((!interval) || (interval == 0)){
+						var itemId = currRec.getSublistValue({
+							sublistId: 'custpage_picktasklist',
+							fieldId: 'custpage_picktasklist_itemid',
+							line: i
+						});
+						var ItemLocationIDSearch = search.create({
+							type: search.Type.ITEM_LOCATION_CONFIGURATION,
+							filters: [ ['item', 'anyof', itemId], "AND", ['location', 'anyof', 3] ],
+							columns: [ 'item', 'internalid' ]
+						});
+						var ItemLocationIDSearchResults = ItemLocationIDSearch.run();
+						var ItemLocationIDSearchResultsArray = ItemLocationIDSearchResults.getRange({ start:0, end: 1});
+						//log.debug("ItemLocationIDSearchResults.lenght", ItemLocationIDSearchResultsArray.length);
+						//log.debug("ItemLocationID", ItemLocationID);
+						if (ItemLocationIDSearchResultsArray.length > 0){
+							var ItemLocationID = ItemLocationIDSearchResultsArray[0].getValue({
+								name: "internalid"
+							});
+							//log.debug("ItemLocationID", ItemLocationID);
+							var id = record.submitFields({
+	    					type: record.Type.ITEM_LOCATION_CONFIGURATION,
+	    					id: ItemLocationID,
+	    					values: {
+	        				invtcountinterval: 90
+	    					}
+							});
+						}
+
+
+					}
+				}
+				alert("Count interval added!");
+
+
+			}
+			catch(err){
+				log.error("Error in countInterval()", err);
+			}
+
+
+		}
+
 		function pageInit(scriptContext) {}
 
 
 		return {
 			changeShippingMethod: changeShippingMethod,
+			countInterval: countInterval,
 			pageInit: pageInit
 		};
 	});

@@ -155,6 +155,133 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			}
 		}
 
+		function printPDF() {
+	    //alert('function called')
+	    var recordObj = currentRecord.get();
+	    var itemFulfilmentId = recordObj.getSublistValue({
+	      sublistId: 'custpage_print_label',
+	      fieldId: 'custpage_item_fullfilment_hiden',
+	      line: 0,
+	    });
+
+	    var isEmptyField = false;
+	    var lineCount = recordObj.getLineCount('custpage_print_label');
+	    for (var i = 0; i < lineCount; i++) {
+	      var itemName = recordObj.getSublistValue({
+	        sublistId: 'custpage_print_label',
+	        fieldId: 'custpage_scan_item_barcode',
+	        line: i,
+	      });
+
+	      if (!itemName) {
+	        isEmptyField = true;
+	        break;
+	      }
+	    }
+
+	    if (isEmptyField == true) {
+	      alert('Please scan all the items before printing label.');
+	      return false;
+	    }
+
+	    /*To capture item quantity*/
+
+	    var isEmptyItemQtyField = false;
+	    var isQtyMissmatch = false;
+
+	    for (var i = 0; i < lineCount; i++) {
+	      var itemQty = recordObj.getSublistValue({
+	        sublistId: 'custpage_print_label',
+	        fieldId: 'custpage_item_quantity_to_capture',
+	        line: i,
+	      });
+
+	      var totalQTY = recordObj.getSublistValue({
+	        sublistId: 'custpage_print_label',
+	        fieldId: 'custpage_item_quantity',
+	        line: i,
+	      });
+	      if (!itemQty) {
+	        isEmptyItemQtyField = true;
+	      }
+	      if (Number(itemQty) != Number(totalQTY)) {
+	        isQtyMissmatch = true;
+	      }
+	    }
+
+	    if (isEmptyItemQtyField == true) {
+	      alert('Please the quantity in all the lines before printing label.');
+	      return false;
+	    }
+	    if (isEmptyItemQtyField == true) {
+	      alert('Total quantity and picked quantity should be same.');
+	      return false;
+	    }
+	    //alert('itemFulfilmentId ' + itemFulfilmentId);
+	    var waveNumber = recordObj.getValue({
+	      fieldId: 'custpage_wave_number',
+	    });
+	    //alert('waveNumber ' + waveNumber);
+	    var itemQuantity = recordObj.getSublistValue({
+	      sublistId: 'custpage_print_label',
+	      fieldId: 'custpage_item_quantity',
+	      line: 0,
+	    });
+	    //alert('itemQuantity ' + itemQuantity);
+	    /*if (parseFloat(itemQuantity) > 1) {
+	                 alert("Please note that an Item in lines has Quantity greater than 1.");
+	             }*/
+	    /*record.submitFields({
+	                 type: "itemfulfillment",
+	                 id: itemFulfilmentId,
+	                 values: {
+	                     shipstatus: 'C',
+	                     custbody_label_printed: true
+	                 },
+	             });*/
+	    var pdfFile = search.lookupFields({
+	      type: 'itemfulfillment',
+	      id: itemFulfilmentId,
+	      columns: ['custbody_av40_label_pdf'],
+	    });
+	    //alert('pdfFile ' + pdfFile.custbody_av40_label_pdf[0].value);
+	    //alert('pdfFile length ' + pdfFile.custbody_av40_label_pdf.length);
+
+	    if (pdfFile.custbody_av40_label_pdf.length < 1) {
+	      alert('The AV40 lable PDF is not available.');
+	      return false;
+	    }
+	    var suiteletURL = url.resolveScript({
+	      scriptId: 'customscript_aby_open_pdf_file',
+	      deploymentId: 'customdeploy_aby_open_pdf_file_deploy',
+	      returnExternalUrl: false,
+	      params: {
+	        pdffileid: pdfFile.custbody_av40_label_pdf[0].value,
+	      },
+	    });
+
+
+	    //alert('suiteletURL ' + suiteletURL);
+	    window.open(suiteletURL);
+	    record.submitFields({
+	      type: 'itemfulfillment',
+	      id: itemFulfilmentId,
+	      values: {
+	        shipstatus: 'C',
+	        custbody_label_printed: true,
+	      },
+	    });
+	    var resetPage = url.resolveScript({
+	      scriptId: 'customscript_pz_print_label',
+	      deploymentId: 'customdeploycustomscript_pz_print_label',
+	    });
+	    resetPage += '&waveNumber=' + waveNumber;
+	    //alert('resetPage ' + resetPage);
+	    var currentUrl = window.location.origin;
+	    window.onbeforeunload = null;
+	    window.location.href = currentUrl + resetPage;
+	  }
+
 		function printLabelPDF() {
 
 			try {
@@ -254,7 +381,6 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 			    if (pdfFile.custbody_av40_label_pdf.length < 1) {
 			      alert('The AV40 lable PDF is not available.');
-						printLabel();
 			      return false;
 			    }
 			    var suiteletURL = url.resolveScript({
@@ -265,23 +391,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			        pdffileid: pdfFile.custbody_av40_label_pdf[0].value,
 			      },
 			    });
+					window.print();
+					window.close();
 			    //alert('suiteletURL ' + suiteletURL);
-			    var windowObj = window.open(suiteletURL);
-
-					// setTimeout(function() {
-					// 		window.focus();
-					// }, 2000);
-					// window.print();
-					// window.close();
-					// window.addEventListener('load', function() {
-					// 	setTimeout(function() {
-					// 		window.print();
-					// 		window.close();
-					// 		//window.opener.onbeforeunload = null;
-					// 		//window.opener.location.reload();
-					// 		//window.location.href = currentUrl + resetPage;
-					// 	}, 2000);
-					// });
+			    window.open(suiteletURL);
 			    record.submitFields({
 			      type: 'itemfulfillment',
 			      id: itemFulfilmentId,
@@ -666,8 +779,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					if (itemName) {
 						if (waveNumber) {
 							var suiteletLink = url.resolveScript({
-								scriptId: 'customscript_pz_print_label',
-								deploymentId: 'customdeploycustomscript_pz_print_label'
+								scriptId: 'customscript3020',
+								deploymentId: 'customdeploy1'
 							});
 							suiteletLink += '&itemName=' + itemName;
 							suiteletLink += '&carrierVal=' + carrierVal;

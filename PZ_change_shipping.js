@@ -15,7 +15,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 
 					var form = serverWidget.createForm({
-						title: 'Print Integrated Shipping Labels'
+						title: 'Inventory Counting'
 					});
 
 					//********Added for test - Przemyslaw Zawadzki******////
@@ -82,17 +82,22 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					}).updateDisplayType({
 						displayType: serverWidget.FieldDisplayType.HIDDEN
 					});
+					picktaskList.addField({
+						id: 'custpage_picktasklist_interval',
+						type: serverWidget.FieldType.TEXT,
+						label: 'COUNT INTERVAL'
+					});
 					//PICK TASK LOW QUANTITY
 
 					var strOutput = "";
 					try{
+
 						var picktaskSearch = search.load({ id: 'customsearch4892'});
 						var results_picktask_search = picktaskSearch.run();
 						var results_picktask_search_array = results_picktask_search.getRange({
 							start: 0,
-							end: 20
+							end: 100
 						});
-
 
 						log.debug("results_picktask_search_array.length -->: ", results_picktask_search_array.length);
 
@@ -130,6 +135,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 								line: i,
 								value: results_picktask_search_array[i].getText(results_picktask_search.columns[5])
 							});
+							var countInterval = results_picktask_search_array[i].getValue(results_picktask_search.columns[6]);
+							if (!countInterval) countInterval = 0;
+							picktaskList.setSublistValue({
+								id: 'custpage_picktasklist_interval',
+								line: i,
+								value: countInterval
+							});
 						}
 
 
@@ -159,7 +171,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						var results_movements_search = movementsSearch.run();
 						var results_movements_search_array = results_movements_search.getRange({
 							start: 0,
-							end: 20
+							end: 100
 						});
 
 						log.debug("results_movements_search_array.length -->: ", results_movements_search_array.length);
@@ -211,10 +223,14 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 					form.addButton({
 						id: 'custpage_print',
-						label: 'Change shipping',
+						label: 'Create Inventory Count',
 						functionName: 'changeShippingMethod()'
 					});
-
+					form.addButton({
+						id: 'custpage_',
+						label: 'Add count interval',
+						functionName: 'countInterval()'
+					});
 					form.clientScriptFileId = clientScriptInternalId;
 					context.response.writePage(form);
 
