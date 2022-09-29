@@ -77,11 +77,48 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						// 		preferredbin: true
 						// 	}
 						// });
-						var id = record.load({
+						var bestitemId = record.load({
 							type: record.Type.INVENTORY_ITEM,
-							id: 7045,
+							id: itemid,
+							isDynamic: true,
 						});
-						log.debug("id to jest ", id.binnumber);
+						var bestitemBin = bestitemId.getSublist({
+								sublistId: 'binnumber'
+						});
+						bestitemId.selectNewLine({
+							sublistId: 'binnumber'
+						});
+						bestitemId.setCurrentSublistValue({
+						    sublistId: 'binnumber',
+						    fieldId: 'location',
+						    value: USA_location
+						});
+						bestitemId.setCurrentSublistText({
+						    sublistId: 'binnumber',
+						    fieldId: 'binnumber',
+						    text: recomended
+						});
+						bestitemId.setCurrentSublistValue({
+						    sublistId: 'binnumber',
+						    fieldId: 'preferredbin',
+						    value: true
+						});
+						bestitemId.commitLine({
+								sublistId: 'binnumber'
+						});
+						bestitemId.save();
+						log.debug("record saved");
+						// var id = record.load({
+						// 	type: record.Type.INVENTORY_ITEM,
+						// 	id: 7045,
+						// });
+						//
+						// log.debug("id to jest ", id.getSublistValue({
+						// 	sublistId: 'binnumber',
+    				// 	fieldId: 'binnumber',
+    				// 	line: 0}
+						// ));
+						//console.log("id to jest ", id.getValue({fieldId: 'binnumber'}));
 
 					}
 				}
@@ -123,21 +160,52 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					var bin_round = currRec.getValue({
 							fieldId: 'custpage_bin_round'
 					});
-					var id = record.submitFields({
-						type: record.Type.BIN,
-						id: bin_id,
-						values: {
-							// custrecord_wmsse_replen_roundqty: bin_round,
-							// custrecord_wmsse_replen_qty: bin_rpln,
-							// custrecord_wmsse_replen_minqty: bin_min,
-							custrecord_wmsse_replen_maxqty: bin_max
 
-						}
+					var binRecord= record.load({
+    				type: record.Type.BIN,
+    				id: bin_id,
+    				isDynamic: true,
 					});
+
+					binRecord.setValue({
+						fieldId: 'custrecord_wmsse_replen_maxqty',
+						value: bin_max,
+					});
+
+					binRecord.setValue({
+						fieldId: 'custrecord_wmsse_replen_minqty',
+						value: bin_min,
+					});
+
+					binRecord.setValue({
+						fieldId: 'custrecord_wmsse_replen_qty',
+						value: bin_rpln,
+					});
+
+					binRecord.setValue({
+						fieldId: 'custrecord_wmsse_replen_roundqty',
+						value: bin_round,
+					});
+
+					var id = binRecord.save();
+
+					// var id = record.submitFields({
+					// 	type: record.Type.BIN,
+					// 	id: bin_id,
+					// 	values: {
+					// 		// custrecord_wmsse_replen_roundqty: bin_round,
+					// 		// custrecord_wmsse_replen_qty: bin_rpln,
+					// 		// custrecord_wmsse_replen_minqty: bin_min,
+					// 		custrecord_wmsse_replen_maxqty: bin_max
+					//
+					// 	}
+					// });
 					log.debug("id to jest ", id);
 
 				}
 			}
+			alert("BINS successfully changed");
+			resetPage();
 		}
 		catch(e){
 			console.log("error in bin button ", e);
@@ -161,6 +229,66 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			suiteletLink += '&typeVal=' + typeVal;
 			window.onbeforeunload = null;
 			window.location.href = suiteletLink;
+	}
+	if (scriptContext.fieldId == 'custpage_best_preffered' || scriptContext.fieldId == 'custpage_best_sold'){
+		var currRec = scriptContext.currentRecord;
+		var bestPreffered = currRec.getValue({
+			fieldId: 'custpage_best_preffered'
+		});
+		var typeVal = currRec.getValue({
+			fieldId: 'custpage_type'
+		});
+		var bestSold = currRec.getValue({
+			fieldId: 'custpage_best_sold'
+		});
+		var suiteletLink = url.resolveScript({
+			scriptId: scriptid_number,
+			deploymentId: deploymentid_number
+		});
+		if (typeVal){
+			suiteletLink += '&typeVal=' + typeVal;
+		}
+		if (bestPreffered){
+			suiteletLink += '&bestPreffered=' + bestPreffered;
+		}
+		if (bestSold){
+			suiteletLink += '&bestSold=' + bestSold;			
+		}
+		window.onbeforeunload = null;
+		window.location.href = suiteletLink;
+	}
+	if (scriptContext.fieldId == 'custpage_bin_item' || scriptContext.fieldId == 'custpage_bin_type' || scriptContext.fieldId == 'custpage_bin_done'){
+		var currRec = scriptContext.currentRecord;
+		var itemName = currRec.getValue({
+			fieldId: 'custpage_bin_item'
+		});
+		var typeVal = currRec.getValue({
+			fieldId: 'custpage_type'
+		});
+		var itemtype = currRec.getValue({
+			fieldId: 'custpage_bin_type'
+		});
+		var binDone = currRec.getValue({
+			fieldId: 'custpage_bin_done'
+		});
+		var suiteletLink = url.resolveScript({
+			scriptId: scriptid_number,
+			deploymentId: deploymentid_number
+		});
+		if (typeVal){
+			suiteletLink += '&typeVal=' + typeVal;
+		}
+		if (itemtype){
+			suiteletLink += '&itemType=' + itemtype;
+		}
+		if (itemName){
+			suiteletLink += '&itemName=' + itemName;
+		}
+		if (binDone){
+			suiteletLink += '&binDone=' + binDone;
+		}
+		window.onbeforeunload = null;
+		window.location.href = suiteletLink;
 	}
 
 	}

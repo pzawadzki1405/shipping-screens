@@ -6,6 +6,10 @@
 
 var best_seller_search_id = 'customsearch4887';
 var bin_search_id = 'customsearch5128';
+var bin_crossbar_class = [20, 25];
+var bin_crossbar_defaults = [30, 150, 150, 1];
+var bin_mats_class = [17, 18, 19];
+var bin_mats_defaults = [10, 100, 100, 1];
 
 define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 'N/runtime'],
 
@@ -19,6 +23,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 					var itemName = context.request.parameters.itemName;
 					var typeVal = context.request.parameters.typeVal;
+					var itemType = context.request.parameters.itemType;
+					var binDone = context.request.parameters.binDone;
+					var bestPreffered = context.request.parameters.bestPreffered;
+					var bestSold = context.request.parameters.bestSold;
 
 					var form = serverWidget.createForm({
 						title: 'Replenishments'
@@ -29,6 +37,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						id: 'custpage_type',
 						type: serverWidget.FieldType.SELECT,
 						label: 'Type'
+					});
+					typeFieldObj.addSelectOption({
+						value: '',
+						text: ''
 					});
 					typeFieldObj.addSelectOption({
 						value: 'best_seller',
@@ -48,10 +60,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						});
 						switch(typeVal){
 							case 'best_seller':
-							form = best_sellerForm(form);
+							form = best_sellerForm(form, bestPreffered, bestSold);
 							break;
 							case 'bins':
-							form = binsForm(form);
+							form = binsForm(form, itemName, itemType, binDone);
 							break;
 							case 'replenishments':
 							form = replenishmentForm(form);
@@ -87,11 +99,21 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 		}
 
-		function best_sellerForm(form){
+		function best_sellerForm(form, bestPreffered, bestSold){
 			form.addField({
-				id: 'custpage_label',
-				type: serverWidget.FieldType.LABEL,
-				label: 'this is best_seller'
+				id: 'custpage_best_preffered',
+				type: serverWidget.FieldType.CHECKBOX,
+				label: 'PREFFERED BIN'
+			});
+			form.addField({
+				id: 'custpage_best_bin',
+				type: serverWidget.FieldType.TEXT,
+				label: 'BIN NAME'
+			});
+			form.addField({
+				id: 'custpage_best_sold',
+				type: serverWidget.FieldType.TEXT,
+				label: 'MIN SOLD IN 1 MONTH'
 			});
 			var bestsellerList = form.addSublist({
 				id: 'custpage_bestlist',
@@ -112,6 +134,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				id: 'custpage_bestlist_item_id',
 				type: serverWidget.FieldType.TEXT,
 				label: 'ITEM ID'
+			}).updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});
 			bestsellerList.addField({
 				id: 'custpage_bestlist_display',
@@ -130,10 +154,36 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			});
 			try{
 			var best_sellerSearch = search.load({ id: 'customsearch4887'});
+			var bestfilters = best_sellerSearch.filters;
 
-			// var bestfilters = best_sellerSearch.filters;
-			// bestfilters.push(search.createFilter({name: 'preferredbin', join: 'item', operator: search.Operator.IS, values: true }));
-			// best_sellerSearch.filters = bestfilters;
+			if (bestPreffered == 'true'){
+				bestPreffered = 'T';
+				bestfilters.push(search.createFilter({name: 'preferredbin', join: 'item', operator: search.Operator.IS, values: 'T' }));
+				form.updateDefaultValues({
+					custpage_best_preffered: bestPreffered
+				});
+			}
+			else{
+				bestPreffered = 'F';
+				bestfilters.push(search.createFilter({name: 'preferredbin', join: 'item', operator: search.Operator.IS, values: 'F' }));
+				form.updateDefaultValues({
+					custpage_best_preffered: bestPreffered
+				});
+			}
+			if (bestSold){
+				form.updateDefaultValues({
+					custpage_best_sold: bestSold
+				});
+				bestfilters.push(search.createFilter({name: 'lineitempickedquantity', operator: search.Operator.GREATERTHAN, values: bestSold, summary: search.Summary.SUM }));
+			}
+			else{
+				bestfilters.push(search.createFilter({name: 'lineitempickedquantity', operator: search.Operator.GREATERTHAN, values: 20, summary: search.Summary.SUM }));
+			}
+
+			//
+			best_sellerSearch.filters = bestfilters;
+
+			log.debug("best filters ", best_sellerSearch.filterExpression);
 
 			var results_best_sellerSearch = best_sellerSearch.run();
 			var results_best_sellerSearch_array = results_best_sellerSearch.getRange({
@@ -183,11 +233,48 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			return form;
 		}
 
-		function binsForm(form){
+		function binsForm(form, itemName, itemTypeVal, binDone){
+			// form.addField({
+			// 	id: 'custpage_label',
+			// 	type: serverWidget.FieldType.LABEL,
+			// 	label: 'this is bins'
+			// });
 			form.addField({
-				id: 'custpage_label',
-				type: serverWidget.FieldType.LABEL,
-				label: 'this is bins'
+				id: 'custpage_bin_done',
+				type: serverWidget.FieldType.CHECKBOX,
+				label: 'ONLY NOT DONE'
+			});
+			form.addField({
+				id: 'custpage_bin_item',
+				type: serverWidget.FieldType.TEXT,
+				label: 'item name'
+			});
+			//var itemName = context.request.parameters.itemName;
+
+			if (itemName){
+				form.updateDefaultValues({
+					custpage_bin_item: itemName
+				});
+			}
+
+			var itemType = form.addField({
+				id: 'custpage_bin_type',
+				type: serverWidget.FieldType.SELECT,
+				label: 'Type',
+				//source: 'class'
+			});
+
+			itemType.addSelectOption({
+				value: '',
+				text: ''
+			});
+			itemType.addSelectOption({
+				value: 'crossbars',
+				text: 'crossbars'
+			});
+			itemType.addSelectOption({
+				value: 'mats',
+				text: 'floor mat'
 			});
 
 			form.addField({
@@ -238,6 +325,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				id: 'custpage_binslist_bin_id',
 				type: serverWidget.FieldType.TEXT,
 				label: 'BIN ID'
+			}).updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
 			});
 			binsList.addField({
 				id: 'custpage_binslist_min',
@@ -260,11 +349,78 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				label: 'ROUND'
 			});
 			try{
+			log.debug("item type ", itemTypeVal);
 			var binSearch = search.load({ id: 'customsearch5128'});
 
-			// var bestfilters = best_sellerSearch.filters;
-			// bestfilters.push(search.createFilter({name: 'preferredbin', join: 'item', operator: search.Operator.IS, values: true }));
-			// best_sellerSearch.filters = bestfilters;
+		  var binfilters = binSearch.filters;
+			log.debug("binDone", binDone);
+
+			if (itemName){
+				binfilters.push(search.createFilter({name: 'name', operator: search.Operator.CONTAINS, values: itemName }));
+			}
+			if (itemTypeVal){
+				form.updateDefaultValues({
+					custpage_bin_type: itemTypeVal
+				});
+				switch(itemTypeVal){
+					case 'crossbars':
+					form.updateDefaultValues({
+						custpage_bin_min: bin_crossbar_defaults[0],
+						custpage_bin_max: bin_crossbar_defaults[1],
+						custpage_bin_replen: bin_crossbar_defaults[2],
+						custpage_bin_round: bin_crossbar_defaults[3]
+					});
+					binfilters.push(search.createFilter({name: 'class', operator: search.Operator.ANYOF, values: bin_crossbar_class }));
+					break;
+
+					case 'mats':
+					form.updateDefaultValues({
+						custpage_bin_min: bin_mats_defaults[0],
+						custpage_bin_max: bin_mats_defaults[1],
+						custpage_bin_replen: bin_mats_defaults[2],
+						custpage_bin_round: bin_mats_defaults[3]
+					});
+					binfilters.push(search.createFilter({name: 'class', operator: search.Operator.ANYOF, values: bin_mats_class }));
+					break;
+
+					default:
+					break;
+				}
+			}
+			binSearch.filters = binfilters;
+			if (binDone){
+				switch(binDone){
+					case 'true':
+					binDone = 'T';
+					var binfiler1 = search.createFilter({name: 'custrecord_wmsse_replen_maxqty', join: 'binnumber', operator: search.Operator.ISEMPTY });
+					var binfiler2 = search.createFilter({name: 'custrecord_wmsse_replen_minqty', join: 'binnumber', operator: search.Operator.ISEMPTY });
+					var binfiler3 = search.createFilter({name: 'custrecord_wmsse_replen_qty', join: 'binnumber', operator: search.Operator.ISEMPTY });
+					var binfiler4 = search.createFilter({name: 'custrecord_wmsse_replen_roundqty', join: 'binnumber', operator: search.Operator.ISEMPTY });
+					var binFilterExpression = binSearch.filterExpression;
+					if (binFilterExpression.length > 0) {    binFilterExpression.push('AND');  }
+					binFilterExpression.push([["binnumber.custrecord_wmsse_replen_maxqty","isempty",""], "OR",
+					 													["binnumber.custrecord_wmsse_replen_minqty","isempty",""], "OR",
+																		["binnumber.custrecord_wmsse_replen_qty","isempty",""], "OR",
+																		["binnumber.custrecord_wmsse_replen_roundqty","isempty",""]]);
+					binSearch.filterExpression = binFilterExpression;
+					//binfilters.push(binfiler1);
+					break;
+
+					case 'false':
+					binDone = 'F';
+					break;
+
+					default:
+					break;
+				}
+				form.updateDefaultValues({
+					custpage_bin_done: binDone
+				});
+
+			}
+			//var binFilterExpression = binSearch.filterExpression;
+			log.debug("bin filters ", binSearch.filterExpression);
+
 
 			var results_binSearch = binSearch.run();
 			var results_binSearch_array = results_binSearch.getRange({
