@@ -80,14 +80,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						});
 
 						console.log("START making bin for  "+itemSku);
-						// var id = record.submitFields({
-						// 	type: record.Type.INVENTORY_ITEM,
-						// 	id: itemid,
-						// 	values: {
-						// 		binnumber: recomended,
-						// 		preferredbin: true
-						// 	}
-						// });
+
 						var bestitemId = record.load({
 							type: record.Type.INVENTORY_ITEM,
 							id: itemid,
@@ -96,6 +89,71 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						var bestitemBin = bestitemId.getSublist({
 								sublistId: 'binnumber'
 						});
+
+						var numLinesBins = bestitemId.getLineCount({
+    						sublistId: 'binnumber'
+						});
+
+						console.log("lines num  "+numLinesBins);
+
+						log.debug("binnumber subblist  ", bestitemBin);
+
+						for (var j = numLinesBins; j >= 0; j--){
+							bestitemId.selectLine({
+    						sublistId: 'binnumber',
+    						line: j
+							});
+							var binLocation = bestitemId.getCurrentSublistValue({
+    						sublistId: 'binnumber',
+    						fieldId: 'location'
+							});
+							console.log("binLocation "+binLocation);
+							if (binLocation == USA_location){
+
+								var binNumberId= bestitemId.getCurrentSublistValue({
+									sublistId: 'binnumber',
+									fieldId: 'binnumber'
+								});
+
+								var binRecord= record.load({
+			    				type: record.Type.BIN,
+			    				id: binNumberId,
+			    				isDynamic: true,
+								});
+
+								binRecord.setValue({
+									fieldId: 'custrecord_wmsse_replen_maxqty',
+									value: ''
+								});
+
+								binRecord.setValue({
+									fieldId: 'custrecord_wmsse_replen_minqty',
+									value: ''
+								});
+
+								binRecord.setValue({
+									fieldId: 'custrecord_wmsse_replen_qty',
+									value: ''
+								});
+
+								binRecord.setValue({
+									fieldId: 'custrecord_wmsse_replen_roundqty',
+									value: ''
+								});
+
+								var id = binRecord.save();
+
+								bestitemId.removeLine({
+    							sublistId: 'binnumber',
+    							line: j
+								});
+
+
+							}
+						}
+
+						console.log("lines num  "+numLines);
+
 						bestitemId.selectNewLine({
 							sublistId: 'binnumber'
 						});
@@ -104,6 +162,15 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						    fieldId: 'location',
 						    value: USA_location
 						});
+
+						var binNumberValue = currRec.getValue({
+								fieldId: 'custpage_best_bin'
+						});
+						//
+						if(binNumberValue){
+							recomended = binNumberValue;
+						}
+
 						bestitemId.setCurrentSublistText({
 						    sublistId: 'binnumber',
 						    fieldId: 'binnumber',
