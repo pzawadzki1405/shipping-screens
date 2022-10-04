@@ -4,14 +4,17 @@
  * @NModuleScope SameAccount
  */
 
-var best_seller_search_id = 'customsearch4887';
-var bin_search_id = 'customsearch5128';
-var replenish_search_id = 'customsearch5130';
-var replenActive_search_id = 'customsearch5131';
+var best_seller_search_id = 'customsearch5941';
+var bin_search_id = 'customsearch5942';
+var replenish_search_id = 'customsearch5943';
+var replenActive_search_id = 'customsearch5944';
+var min_best_sold = 10;
 var bin_crossbar_class = [20, 25];
 var bin_crossbar_defaults = [30, 150, 150, 1];
 var bin_mats_class = [17, 18, 19];
 var bin_mats_defaults = [10, 100, 100, 1];
+var bin_hubcaps_class = [11];
+var bin_hubcaps_defaults = [10, 60, 60, 1];
 
 define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 'N/runtime'],
 
@@ -64,7 +67,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						});
 						switch(typeVal){
 							case 'best_seller':
-							form = best_sellerForm(form, bestPreffered, bestSold);
+							form = best_sellerForm(form, bestPreffered, bestSold, itemName);
 							break;
 							case 'bins':
 							form = binsForm(form, itemName, itemType, binDone);
@@ -103,16 +106,21 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 		}
 
-		function best_sellerForm(form, bestPreffered, bestSold){
+		function best_sellerForm(form, bestPreffered, bestSold, itemName){
 			form.addField({
 				id: 'custpage_best_preffered',
 				type: serverWidget.FieldType.CHECKBOX,
 				label: 'PREFFERED BIN'
 			});
 			form.addField({
+				id: 'custpage_best_itemname',
+				type: serverWidget.FieldType.TEXT,
+				label: 'ITEM NAME'
+			});
+			form.addField({
 				id: 'custpage_best_bin',
 				type: serverWidget.FieldType.TEXT,
-				label: 'BIN NAME'
+				label: 'NEW BIN NAME'
 			});
 			form.addField({
 				id: 'custpage_best_sold',
@@ -174,6 +182,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					custpage_best_preffered: bestPreffered
 				});
 			}
+			if(itemName){
+				form.updateDefaultValues({
+					custpage_best_itemname: itemName
+				});
+				bestfilters.push(search.createFilter({name: 'name', join: 'item', operator: search.Operator.CONTAINS, values: itemName }));
+
+			}
 			if (bestSold){
 				form.updateDefaultValues({
 					custpage_best_sold: bestSold
@@ -181,7 +196,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				bestfilters.push(search.createFilter({name: 'lineitempickedquantity', operator: search.Operator.GREATERTHAN, values: bestSold, summary: search.Summary.SUM }));
 			}
 			else{
-				bestfilters.push(search.createFilter({name: 'lineitempickedquantity', operator: search.Operator.GREATERTHAN, values: 20, summary: search.Summary.SUM }));
+				bestfilters.push(search.createFilter({name: 'lineitempickedquantity', operator: search.Operator.GREATERTHAN, values: min_best_sold, summary: search.Summary.SUM }));
 			}
 
 			//
@@ -281,6 +296,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				text: 'floor mat'
 			});
 
+			itemType.addSelectOption({
+				value: 'hubcaps',
+				text: 'wheel covers'
+			});
+
 			form.addField({
 				id: 'custpage_bin_min',
 				type: serverWidget.FieldType.TEXT,
@@ -319,6 +339,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				id: 'custpage_binslist_item',
 				type: serverWidget.FieldType.TEXT,
 				label: 'ITEM'
+			});
+			binsList.addField({
+				id: 'custpage_binslist_display',
+				type: serverWidget.FieldType.TEXT,
+				label: 'DISPLAY'
 			});
 			binsList.addField({
 				id: 'custpage_binslist_bin',
@@ -385,6 +410,16 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						custpage_bin_round: bin_mats_defaults[3]
 					});
 					binfilters.push(search.createFilter({name: 'class', operator: search.Operator.ANYOF, values: bin_mats_class }));
+					break;
+
+					case 'hubcaps':
+					form.updateDefaultValues({
+						custpage_bin_min: bin_hubcaps_defaults[0],
+						custpage_bin_max: bin_hubcaps_defaults[1],
+						custpage_bin_replen: bin_hubcaps_defaults[2],
+						custpage_bin_round: bin_hubcaps_defaults[3]
+					});
+					binfilters.push(search.createFilter({name: 'class', operator: search.Operator.ANYOF, values: bin_hubcaps_class }));
 					break;
 
 					default:
@@ -461,6 +496,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				if (!bin_rpln) bin_rpln = 0;
 				var bin_round = results_binSearch_array[i].getValue(results_binSearch.columns[6]);
 				if (!bin_round) bin_round = 0;
+
+				binsList.setSublistValue({
+					id: 'custpage_binslist_display',
+					line: i,
+					value: results_binSearch_array[i].getValue(results_binSearch.columns[7])
+				});
+
 				binsList.setSublistValue({
 					id: 'custpage_binslist_min',
 					line: i,
@@ -625,7 +667,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			var quantityActive ='';
 			if (results_replenActiveSearch_array.length > 0){
 					//log.debug("results_replenSearch_array ", results_replenSearch_array);
-					for (var i=0;  i < results_replenActiveSearch_array.length; i++){
+					var maximumActiveReplenishment = 10;
+					if (results_replenActiveSearch_array.length < maximumActiveReplenishment) maximumActiveReplenishment = results_replenActiveSearch_array.length;
+					for (var i=0;  i < maximumActiveReplenishment; i++){
 						skuActive = results_replenActiveSearch_array[i].getText(replenActiveSearch.columns[0]);
 						if (!skuActive) skuActive = '0';
 						fromBinActive = results_replenActiveSearch_array[i].getText(replenActiveSearch.columns[1]);

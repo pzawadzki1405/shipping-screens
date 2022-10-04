@@ -9,9 +9,9 @@ var USA_subsidiary = 2;
 var USA_location = 3;
 var USA_rma_location = 6;
 var Germany_rma_location = 8;
-var scriptid_number = 'customscript3017';
+var scriptid_number = 'customscript4072';
 var deploymentid_number = 'customdeploy1';
-var replenActive_search_id = 'customsearch5131';
+var replenActive_search_id = 'customsearch5944';
 
 
 define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dialog'],
@@ -186,6 +186,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						});
 						bestitemId.save();
 						console.log("FINISHED making bin for  "+itemSku);
+						//alert("FINISHED making bin for  "+itemSku);
 						//log.debug("record saved");
 						// var id = record.load({
 						// 	type: record.Type.INVENTORY_ITEM,
@@ -201,6 +202,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 					}
 				}
+				alert("FINISHED making bins");
+				resetPage("refresh");
 			}
 			catch(e){
 				log.error("error in best button ", e);
@@ -240,10 +243,12 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 							fieldId: 'custpage_bin_round'
 					});
 
-					var bin_name = currRec.getValue({
-							fieldId: 'custpage_bin_item'
+					var bin_name = currRec.getSublistValue({
+						sublistId: 'custpage_binslist',
+						fieldId: 'custpage_binslist_item',
+						line: i
 					});
-
+					
 					console.log("Start making bin for  "+bin_name);
 
 					var binRecord= record.load({
@@ -527,7 +532,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 	}
 
-	if (scriptContext.fieldId == 'custpage_best_preffered' || scriptContext.fieldId == 'custpage_best_sold'){
+	if (scriptContext.fieldId == 'custpage_best_preffered' || scriptContext.fieldId == 'custpage_best_sold' || scriptContext.fieldId == 'custpage_best_itemname'){
 		var currRec = scriptContext.currentRecord;
 		var bestPreffered = currRec.getValue({
 			fieldId: 'custpage_best_preffered'
@@ -538,12 +543,20 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		var bestSold = currRec.getValue({
 			fieldId: 'custpage_best_sold'
 		});
+
+		var bestItemName = currRec.getValue({
+			fieldId: 'custpage_best_itemname'
+		});
+
 		var suiteletLink = url.resolveScript({
 			scriptId: scriptid_number,
 			deploymentId: deploymentid_number
 		});
 		if (typeVal){
 			suiteletLink += '&typeVal=' + typeVal;
+		}
+		if (bestItemName){
+			suiteletLink += '&itemName=' + bestItemName;
 		}
 		if (bestPreffered){
 			suiteletLink += '&bestPreffered=' + bestPreffered;
