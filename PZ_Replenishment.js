@@ -801,7 +801,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				// jesli rozmiar palety wiekszy niz maximum - nie dokonczone
 			if (sumReplenishment == 0 && ((parseInt(fromAvailable)) > (parseInt(binMaximum)))){
 				fromAvailable = (parseInt(binMaximum)) - (parseInt(toAvailable));
-				log.debug("new available for "+itemSKU+" is "+fromAvailable);
+				if (fromAvailable < 0) continue;
+				//log.debug("new available for "+itemSKU+" is "+fromAvailable);
 			}
 			else{
 				if (sumReplenishment > 0 && ((parseInt(fromAvailable)) > (parseInt(binMaximum)))){
@@ -825,7 +826,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				}
 				var total = ((parseInt(toAvailable))+sum+sumReplenishment);
 				if ((total > (parseInt(binMaximum))) ){
-					log.debug("skipped becouse of quantity sumReplen "+sumReplenishment+" SKU "+itemSKU+" sum "+sum);
+					//log.debug("skipped becouse of quantity sumReplen "+sumReplenishment+" SKU "+itemSKU+" sum "+sum);
 					binType = 'Over maximum';
 					continue;
 				}

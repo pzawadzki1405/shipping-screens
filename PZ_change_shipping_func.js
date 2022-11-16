@@ -140,6 +140,32 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 	    					}
 							});
 						}
+						else{
+							var loc_config = record.create({
+									type: record.Type.ITEM_LOCATION_CONFIGURATION,
+									//isDynamic: true
+							});
+							loc_config.setValue({
+									fieldId: 'subsidiary',
+									value: 2
+							});
+							loc_config.setValue({
+									fieldId: 'location',
+									value: 3
+							});
+							loc_config.setValue({
+									fieldId: 'item',
+									value: itemId
+							});
+							loc_config.setValue({
+									fieldId: 'invtcountinterval',
+									value: 90
+							});
+							var loc_config_id = loc_config.save();
+
+							log.debug("loc_config_id ", loc_config_id);
+
+						}
 
 
 					}

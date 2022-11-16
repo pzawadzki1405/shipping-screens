@@ -1352,45 +1352,18 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					],
 					columns: [
 						search.createColumn({
+							name: 'status',
+							join: 'transaction',
+							summary: search.Summary.GROUP
+						}),
+						search.createColumn({
 							name: 'internalid',
-							join: 'transaction'
-						}),
-						search.createColumn({
-							name: 'wavename'
-						}),
-						search.createColumn({
-							name: 'lineitemstatus'
+							join: 'transaction',
+							summary: search.Summary.COUNT
 						})
 					]
 				});
-				var searchResults = [];
-				var count = 0;
-				var pageSize = 1000;
-				var start = 0;
-				do {
-					var tempData = pickTaskSearch.run().getRange({
-						start: start,
-						end: start + pageSize
-					});
-					searchResults = searchResults.concat(tempData);
-					count = searchResults.length;
-					start += pageSize;
-				} while (count == pageSize);
-				for (var i = 0; i < searchResults.length; i++) {
-					var waveOrder = searchResults[i].getValue({
-						name: 'internalid',
-						join: 'transaction'
-					});
-					var lineStatus = searchResults[i].getValue({
-						name: 'lineitemstatus',
-					});
-					if (waveOrders.indexOf(waveOrder) == -1) waveOrders.push(waveOrder);
-					linesTotal++;
-					if (lineStatus == 'PICKED') {
-						linesPicked++;
-					}
 
-				}
 				var dataObj = {
 					waveOrders: waveOrders,
 					linesTotal: linesTotal,

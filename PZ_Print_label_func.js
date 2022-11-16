@@ -318,24 +318,6 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 		function printLabel2() {
 
-			// var lineCount = currRec.getLineCount({
-			// 	sublistId: 'custpage_print_label'
-			// });
-			// if (lineCount > 0) {
-			// 	var ifIdVal = currRec.getSublistValue({
-			// 		sublistId: 'custpage_print_label',
-			// 		fieldId: 'custpage_item_fullfilment_hiden',
-			// 		line: 0
-			// 	});
-			// 	var userID = currRec.getSublistValue({
-			// 		sublistId: 'custpage_userID',
-			// 		fieldId: 'custpage_item_fullfilment_hiden',
-			// 		line: 0
-			// 	});
-		  // }
-			// else{
-			// 	alert('no order selected');
-			// }
 			var currRec = currentRecord.get();
 			var userID = currRec.getValue({
 				fieldId: 'custpage_user_id'
@@ -401,63 +383,6 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 		}
 
-		// function checkWhoLocked(userName, fulfillmentID){
-		//
-		// 	// var systemnotesFilter = search.createFilter({
-		// 	// 					 name: 'field',
-		// 	// 					 join: 'systemnotes',
-		// 	// 					 operator: search.Operator.ANYOF,
-		// 	// 					 values: 'custbody_open_in_print_label'
-		// 	// });
-		//
-		// 	var newItemfulfillmentSearchObj = search.create({
-		// 		type: "itemfulfillment",
-		// 		filters: [
-		// 			["internalid", "anyof", fulfillmentID],
-		// 			"AND", ["custbody_open_in_print_label", "is", ["T"]],
-		// 			"AND", ["systemnotes.newvalue", "is", ["T"]],
-		// 			//"AND", ["systemnotes.field", "ANYOF", ["Open in print label"]]
-		// 			"AND", ["systemnotes.field", "ANYOF", ['custbody_open_in_print_label', "Open in print label"]]
-		// 			//systemnotesFilter
-		// 			//"AND", ["status", "anyof", "ItemShip:B"]
-		// 		],
-		// 		columns: [
-		// 			search.createColumn({
-		// 				name: "internalid",
-		// 				sort: search.Sort.ASC,
-		// 				label: "Internal ID"
-		// 			}),
-		// 			search.createColumn({
-		// 				name: "trandate",
-		// 				sort: search.Sort.DESC,
-		// 				label: "Date"
-		// 			}),
-		// 			search.createColumn({
-		// 				name: "status",
-		// 				label: "status"
-		// 			}),
-		// 			search.createColumn({
-		// 				name: "newvalue",
-		// 				join: "systemnotes",
-		// 				label: "Field"
-		// 			}),
-		// 			search.createColumn({
-		// 				name: "field",
-		// 				join: "systemnotes",
-		// 				label: "Field"
-		// 			}),
-		// 			search.createColumn({
-		// 				name: "name",
-		// 				join: "systemnotes",
-		// 				label: "Namer"
-		// 			})]
-		// 		});
-		// 		var newSearchResults = newItemfulfillmentSearchObj.run().getRange({
-		// 			start: 0,
-		// 			end: 15
-		// 		});
-		// 		console.log("locked orders length: ", newSearchResults.length, " results: ", JSON.stringify(newSearchResults));
-		// }
 
 
 		function checkWhoLocked2(userName, fulfillmentID){
