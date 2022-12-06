@@ -3,6 +3,9 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
+
+var scriptId = '';
+
 define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 'N/runtime'],
 
 	function(serverWidget, search, https, message, record, runtime) {
@@ -23,6 +26,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					var allowRepeating = context.request.parameters.allowRepeating;
 					var selectOrderNo = context.request.parameters.selectOrderNo;
 					var waveNumber = context.request.parameters.waveNumber;
+					var autoShipping = context.request.parameters.autoShipping;
 
 					//********Added for test - Przemyslaw Zawadzki******////
 					var userName = runtime.getCurrentUser().name;
@@ -124,6 +128,18 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						type: serverWidget.FieldType.PERCENT,
 						label: 'WAVE COMPLETION (%)'
 					});
+					var autoShippingField = form.addField({
+						id: 'custpage_auto_shipping',
+						type: serverWidget.FieldType.CHECKBOX,
+						label: 'Auto Shipping'
+					});
+					if (autoShipping == 'true'){
+						autoShipping = 'T';
+						form.updateDefaultValues({
+							custpage_auto_shipping: autoShipping
+						});
+					}
+
 					completionPrecFld.updateDisplayType({
 						displayType: serverWidget.FieldDisplayType.DISABLED
 					});
@@ -990,7 +1006,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						name: 'name',
 						join: 'file',
 						operator: 'haskeywords',
-						values: ["PZ_Print_label_func.js"]
+						values: ["PZ_Test_Print_Label_func.js"]
 					}]
 				});
 
