@@ -10,6 +10,10 @@ var LOCKED_NONE = "1";
 var LOCKED_WRONG = "2";
 var LOCKED_CORRECT = "3";
 
+//var scriptid_number = 'customscript_pz_print_label';
+var scriptid_number = 'customscript_pz_print_label';
+var deploymentid_number = 'customdeploycustomscript_pz_print_label';
+
 define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dialog'],
 	function(url, currentRecord, record, search, https, dialog) {
 
@@ -21,6 +25,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				var waveNumber = currRec.getValue({
 					fieldId: 'custpage_wave_number'
 				});
+				var autoShipping = currRec.getValue({fieldId: 'custpage_auto_shipping'});
+
 				if (waveNumber) {
 					var allowRepeating = currRec.getValue({
 						fieldId: 'custpage_allow_repeating'
@@ -87,10 +93,13 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					}
 					console.log("linkVal", linkVal);
 					var resetPage = url.resolveScript({
-						scriptId: 'customscript_pz_print_label',
-						deploymentId: 'customdeploycustomscript_pz_print_label'
+						scriptId: scriptid_number,
+						deploymentId: deploymentid_number
 					});
 					resetPage += "&waveNumber=" + waveNumber;
+					if(autoShipping){
+						 resetPage += '&autoShipping=true'
+					}
 					var currentUrl = window.location.origin;
 					window.onbeforeunload = null;
 
@@ -163,6 +172,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				var waveNumber = currRec.getValue({
 					fieldId: 'custpage_wave_number'
 				});
+				var autoShipping = currRec.getValue({fieldId: 'custpage_auto_shipping'});
 				if (waveNumber) {
 					var allowRepeating = currRec.getValue({
 						fieldId: 'custpage_allow_repeating'
@@ -228,14 +238,6 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						}
 					}
 					console.log("linkVal", linkVal);
-					// var resetPage = url.resolveScript({
-					// 	scriptId: 'customscript_pz_print_label',
-					// 	deploymentId: 'customdeploycustomscript_pz_print_label'
-					// });
-					// resetPage += "&waveNumber=" + waveNumber;
-					// var currentUrl = window.location.origin;
-					// window.onbeforeunload = null;
-
 
 					///////PRINT Label
 					var recordObj = currentRecord.get();
@@ -291,10 +293,13 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			      },
 			    });
 			    var resetPage = url.resolveScript({
-			      scriptId: 'customscript_pz_print_label',
-			      deploymentId: 'customdeploycustomscript_pz_print_label',
+			      scriptId: scriptid_number,
+			      deploymentId: deploymentid_number,
 			    });
 			    resetPage += '&waveNumber=' + waveNumber;
+					if(autoShipping){
+						 resetPage += '&autoShipping=true'
+					}
 			    //alert('resetPage ' + resetPage);
 			    var currentUrl = window.location.origin;
 			    window.onbeforeunload = null;
@@ -383,7 +388,42 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 		}
 
+		function fulfillementCheck(){
+			var lineIndex = -1;
+			var currRec = currentRecord.get();
+			var numLines = currRec.getLineCount({
+				sublistId: 'custpage_print_label'
+			});
+			for (var r = 0; r < numLines; r++) {
+				var scannedItem = currRec.getSublistValue({
+					sublistId: 'custpage_print_label',
+					fieldId: 'custpage_scan_item_barcode',
+					line: r
+				});
+				var printVal = currRec.getSublistValue({
+					sublistId: 'custpage_print_label',
+					fieldId: 'custpage_print_fulfillment',
+					line: r
+				});
+				console.log("scannedItem", scannedItem);
 
+				if (printVal == true && lineIndex == -1) {
+					lineIndex = r
+				}
+				if (printVal == true) {
+					if ((scannedItem == "" || scannedItem == null || scannedItem == undefined)) {
+						//alert("Please scan all selected items");
+						return false;
+					}
+				}
+			}
+
+			if (lineIndex == -1) {
+				//alert("Please select atleast one item");
+				return false;
+			}
+			return true;
+		}
 
 		function checkWhoLocked2(userName, fulfillmentID){
 			try{
@@ -430,8 +470,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		function resetButton() {
 			var currRec = currentRecord.get();
 			var resetPage = url.resolveScript({
-				scriptId: 'customscript_pz_print_label',
-				deploymentId: 'customdeploycustomscript_pz_print_label'
+				scriptId: scriptid_number,
+				deploymentId: deploymentid_number
 			});
 			var lineCount = currRec.getLineCount({
 				sublistId: 'custpage_print_label'
@@ -439,7 +479,11 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			var waveNumber = currRec.getValue({
 				fieldId: 'custpage_wave_number'
 			});
+			var autoShipping = currRec.getValue({
+				fieldId: 'custpage_auto_shipping'
+			});
 			resetPage += '&waveNumber=' + waveNumber;
+			resetPage += '&autoShipping=' + autoShipping;
 			if (lineCount > 0) {
 				var ifIdVal = currRec.getSublistValue({
 					sublistId: 'custpage_print_label',
@@ -471,9 +515,105 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					alert("Please note that an Item in lines has Quantity greater than 1.")
 				}
 				checkAndSetOpenInPrintLabel(currRec);
+				//itemSKUCheck();
+
+				var autoShipping = currRec.getValue({fieldId: 'custpage_auto_shipping'});
+
+					setTimeout(function() {
+						if (fulfillementCheck()){
+							if(autoShipping && !hasGT1Qty){
+								printLabel2();
+							}
+						}
+						else{
+							var numLines = currRec.getLineCount({
+								sublistId: 'custpage_print_label'
+							});
+							if (numLines > 0){
+								for (var r = 0; r < numLines; r++) {
+									var scannedItem = currRec.getSublistValue({
+										sublistId: 'custpage_print_label',
+										fieldId: 'custpage_scan_item_barcode',
+										line: r
+									});
+									if ((scannedItem == "" || scannedItem == null || scannedItem == undefined)) {
+										document.getElementById('custpage_scan_item_barcode' + Number(r + 1)).focus();
+										break;
+									}
+								}
+							}
+							else{
+								document.getElementById('custpage_item_barcode').focus();
+							}
+						}
+					}, 2000);
+
+
+
+					//document.getElementById('custpage_item_barcode').blur();
+
+
 			} catch (e) {
 				console.log("Error in" + title, e);
 			}
+		}
+
+		function itemSKUCheck(){
+			var currRec = currentRecord.get();
+			var itemCode = currRec.getCurrentSublistValue({
+				sublistId: 'custpage_print_label',
+				fieldId: 'custpage_item_code_hidden'
+			});
+			var itemUpcCode = currRec.getCurrentSublistValue({
+				sublistId: 'custpage_print_label',
+				fieldId: 'custpage_upc_code_hidden'
+			});
+			var scanedItem = currRec.getCurrentSublistValue({
+				sublistId: 'custpage_print_label',
+				fieldId: 'custpage_scan_item_barcode'
+			});
+
+			if (scanedItem != itemUpcCode) {
+				alert("Invalid Item.");
+				currRec.setCurrentSublistValue({
+					sublistId: 'custpage_print_label',
+					fieldId: 'custpage_scan_item_barcode',
+					value: "",
+					ignoreFieldChange: true
+				});
+				currRec.commitLine({
+					sublistId: 'custpage_print_label'
+				});
+				document.getElementById('custpage_scan_item_barcode' + Number(currRec.getCurrentSublistIndex({
+					sublistId: 'custpage_print_label'
+				}) + 1)).focus();
+				return false;
+			} else {
+				var numLines = currRec.getLineCount({
+					sublistId: 'custpage_print_label'
+				});
+				for (var r = 0; r < numLines; r++) {
+					var scannedItem = currRec.getSublistValue({
+						sublistId: 'custpage_print_label',
+						fieldId: 'custpage_scan_item_barcode',
+						line: r
+					});
+					if ((scannedItem == "" || scannedItem == null || scannedItem == undefined)) {
+						document.getElementById('custpage_scan_item_barcode' + Number(r + 1)).focus();
+						break;
+					}
+				}
+			}
+			var autoShipping = currRec.getValue({fieldId: 'custpage_auto_shipping'});
+			var hasGT1Qty = currRec.getValue('custpage_has_greater_than_1_qty');
+			if(autoShipping && !hasGT1Qty){
+				setTimeout(function() {
+					if (fulfillementCheck()){
+						printLabel2();
+					}
+				}, 2000);
+			}
+
 		}
 
 		function fieldChanged(scriptContext) {
@@ -482,53 +622,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			try {
 				var currRec = scriptContext.currentRecord;
 
+
 				if (scriptContext.sublistId == 'custpage_print_label' && scriptContext.fieldId == 'custpage_scan_item_barcode') {
-					checkAndSetOpenInPrintLabel(currRec);
-					var itemCode = currRec.getCurrentSublistValue({
-						sublistId: 'custpage_print_label',
-						fieldId: 'custpage_item_code_hidden'
-					});
-					var itemUpcCode = currRec.getCurrentSublistValue({
-						sublistId: 'custpage_print_label',
-						fieldId: 'custpage_upc_code_hidden'
-					});
-					var scanedItem = currRec.getCurrentSublistValue({
-						sublistId: 'custpage_print_label',
-						fieldId: 'custpage_scan_item_barcode'
-					});
-
-					if (scanedItem != itemUpcCode) {
-						alert("Invalid Item.");
-						currRec.setCurrentSublistValue({
-							sublistId: 'custpage_print_label',
-							fieldId: 'custpage_scan_item_barcode',
-							value: "",
-							ignoreFieldChange: true
-						});
-						currRec.commitLine({
-							sublistId: 'custpage_print_label'
-						});
-						document.getElementById('custpage_scan_item_barcode' + Number(currRec.getCurrentSublistIndex({
-							sublistId: 'custpage_print_label'
-						}) + 1)).focus();
-						return false;
-					} else {
-						var numLines = currRec.getLineCount({
-							sublistId: 'custpage_print_label'
-						});
-						for (var r = 0; r < numLines; r++) {
-							var scannedItem = currRec.getSublistValue({
-								sublistId: 'custpage_print_label',
-								fieldId: 'custpage_scan_item_barcode',
-								line: r
-							});
-							if ((scannedItem == "" || scannedItem == null || scannedItem == undefined)) {
-								document.getElementById('custpage_scan_item_barcode' + Number(r + 1)).focus();
-								break;
-							}
-						}
-
-					}
+					//checkAndSetOpenInPrintLabel(currRec);
+						itemSKUCheck();
 				}
 				if (scriptContext.sublistId == 'custpage_print_label' && scriptContext.fieldId == 'custpage_print_fulfillment') {
 					var lastSelectedLineIndex = currRec.getValue({
@@ -583,6 +680,9 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				var waveNumber = currRec.getValue({
 					fieldId: 'custpage_wave_number'
 				});
+				var autoShipping = currRec.getValue({
+					fieldId: 'custpage_auto_shipping'
+				});
 				if (fieldArray.indexOf(scriptContext.fieldId) != -1) {
 					itemName = currRec.getValue({
 						fieldId: 'custpage_item_barcode'
@@ -591,8 +691,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					if (itemName) {
 						if (waveNumber) {
 							var suiteletLink = url.resolveScript({
-								scriptId: 'customscript_pz_print_label',
-								deploymentId: 'customdeploycustomscript_pz_print_label'
+								scriptId: scriptid_number,
+								deploymentId: deploymentid_number
 							});
 							suiteletLink += '&itemName=' + itemName;
 							suiteletLink += '&carrierVal=' + carrierVal;
@@ -600,6 +700,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 							suiteletLink += '&allowRepeating=' + allowRepeating;
 							suiteletLink += '&selectOrderNo=' + selectOrderNo;
 							suiteletLink += '&waveNumber=' + waveNumber;
+							suiteletLink += '&autoShipping=' + autoShipping;
 
 							// var lineCount = currRec.getLineCount({
 							// 	sublistId: 'custpage_print_label'
@@ -721,8 +822,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				});
 				if (allowRepeating == false || allowRepeating == 'F') {
 					var suiteletLink = url.resolveScript({
-						scriptId: 'customscript_pz_print_label',
-						deploymentId: 'customdeploycustomscript_pz_print_label'
+						scriptId: scriptid_number,
+						deploymentId: deploymentid_number
 					});
 					suiteletLink += '&itemName=' + itemName;
 					suiteletLink += '&carrierVal=' + carrierVal;
@@ -946,6 +1047,8 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			printLabel: printLabel,
 			printLabel2: printLabel2,
 			printLabelPDF: printLabelPDF,
+			fulfillementCheck: fulfillementCheck,
+			itemSKUCheck: itemSKUCheck,
 			resetButton: resetButton,
 			pageInit: pageInit,
 			skipToNext: skipToNext

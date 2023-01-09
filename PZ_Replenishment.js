@@ -774,6 +774,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 				var fromAvailable = results_replenSearch_array[i].getValue(replenSearch.columns[3]);
 				var toAvailable = results_replenSearch_array[i].getValue(replenSearch.columns[5]);
+				var binMinimum = results_replenSearch_array[i].getValue(replenSearch.columns[6]);
 				var binMaximum = results_replenSearch_array[i].getValue(replenSearch.columns[7]);
 				var itemSKU = results_replenSearch_array[i].getValue(replenSearch.columns[0]);
 
@@ -802,6 +803,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			if (sumReplenishment == 0 && ((parseInt(fromAvailable)) > (parseInt(binMaximum)))){
 				fromAvailable = (parseInt(binMaximum)) - (parseInt(toAvailable));
 				if (fromAvailable < 0) continue;
+				if ((parseInt(toAvailable)) > (parseInt(binMinimum))) continue;
 				//log.debug("new available for "+itemSKU+" is "+fromAvailable);
 			}
 			else{
