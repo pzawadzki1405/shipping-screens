@@ -13,6 +13,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			try {
 				var title = " onRequest ";
 
+					var locVal = context.request.parameters.locVal;
+					var subVal = context.request.parameters.subVal;
 
 					var form = serverWidget.createForm({
 						title: 'Inventory Counting'
@@ -24,6 +26,31 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						type: serverWidget.FieldType.LABEL,
 						label: 'TEST BUTTON: '
 					});
+
+					var locationFieldObj = form.addField({
+						id: 'custpage_location',
+						type: serverWidget.FieldType.SELECT,
+						label: 'Location',
+						source: 'location'
+					});
+
+					var subsidiaryFieldObj = form.addField({
+						id: 'custpage_subsidiary',
+						type: serverWidget.FieldType.SELECT,
+						label: 'Subsidiary',
+						source: 'subsidiary'
+					});
+					if (locVal){
+						form.updateDefaultValues({
+							custpage_location: locVal
+						});
+					}
+					if (subVal){
+						form.updateDefaultValues({
+							custpage_subsidiary: subVal
+						});
+					}
+
 
 					var orders = form.addField({
 						id: 'custpage_order_id',
@@ -93,10 +120,16 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					try{
 
 						var picktaskSearch = search.load({ id: 'customsearch4892'});
+						var picktaskFilters = picktaskSearch.filters;
+						//itemName = results_movements_search_array[i].getText(results_movements_search.columns[2]);
+						//itemBin = results_movements_search_array[i].getValue(results_movements_search.columns[4]);
+						picktaskFilters.push(search.createFilter({ name: 'location', operator: search.Operator.ANYOF, values: locVal}));
+						picktaskFilters.push(search.createFilter({name: 'inventorylocation', join: 'item', operator: search.Operator.ANYOF, values: locVal }));
+						picktaskSearch.filters = picktaskFilters;
 						var results_picktask_search = picktaskSearch.run();
 						var results_picktask_search_array = results_picktask_search.getRange({
 							start: 0,
-							end: 100
+							end: 30
 						});
 
 						log.debug("results_picktask_search_array.length -->: ", results_picktask_search_array.length);
@@ -159,9 +192,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					catch (err){
 						 log.error("Error in pick task low quantity", err);
 					}
-					form.updateDefaultValues({
-						custpage_order_id: strOutput
-					});
+					// form.updateDefaultValues({
+					// 	custpage_order_id: strOutput
+					// });
 
 					///MOVEMENTS
 
@@ -259,7 +292,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						name: 'name',
 						join: 'file',
 						operator: 'haskeywords',
-						values: ["PZ_change_shipping_func.js"]
+						values: ["PZ_inventory_count_func.js"]
 					}]
 				});
 

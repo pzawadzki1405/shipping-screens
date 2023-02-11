@@ -10,6 +10,10 @@ var LOCKED_NONE = "1";
 var LOCKED_WRONG = "2";
 var LOCKED_CORRECT = "3";
 
+
+var scriptid_number = 'customscript3122';
+var deploymentid_number = 'customdeploy1';
+
 define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dialog'],
 	function(url, currentRecord, record, search, https, dialog) {
 
@@ -22,8 +26,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				//var suiteletURL = "file:///C:/Users/wareh/Downloads/FedEx_Shipping_Label_1659387368195.pdf";
 
 				//subs 2 to USA
-				var subsidiaryId = 2;
-		    var locationId = 3;
+
 				var accountId = 58;
 		    //var itemId = 1215;
 		    //var binNumber = 7648;
@@ -32,6 +35,24 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				var numLines = currRec.getLineCount({
 					sublistId: 'custpage_picktasklist'
 				});
+
+
+				var locationId = currRec.getValue({
+					fieldId: 'custpage_location'
+				});
+
+				var subsidiaryId = currRec.getValue({
+					fieldId: 'custpage_subsidiary'
+				});
+
+				if (!subsidiaryId){
+					alert("Please enter subsidiary");
+					return;
+				}
+				if (!locationId){
+					alert("Please enter location");
+					return;
+				}
 
 		    var inventoryCount = record.create({
 		        type: record.Type.INVENTORY_COUNT,
@@ -91,7 +112,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		    log.debug({
 		        title: 'Inventory Count Created: ' + inventoryCount
 		    });
-				alert("Inventory Count Created: ", inventoryCount);
+				alert("Inventory Count Created: "+inventoryCount);
 			}
 			catch(err){
 				log.error("Error in changeShippingMethod", err);
@@ -106,6 +127,24 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				var numLines = currRec.getLineCount({
 					sublistId: 'custpage_picktasklist'
 				});
+
+				var locationId = currRec.getValue({
+					fieldId: 'custpage_location'
+				});
+
+				var subsidiaryId = currRec.getValue({
+					fieldId: 'custpage_subsidiary'
+				});
+
+				if (!subsidiaryId){
+					alert("Please enter subsidiary");
+					return;
+				}
+				if (!locationId){
+					alert("Please enter location");
+					return;
+				}
+
 				for (var i = 0; i < numLines; i++) {
 					var interval = currRec.getSublistValue({
 						sublistId: 'custpage_picktasklist',
@@ -120,7 +159,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						});
 						var ItemLocationIDSearch = search.create({
 							type: search.Type.ITEM_LOCATION_CONFIGURATION,
-							filters: [ ['item', 'anyof', itemId], "AND", ['location', 'anyof', 3] ],
+							filters: [ ['item', 'anyof', itemId], "AND", ['location', 'anyof', locationId] ],
 							columns: [ 'item', 'internalid' ]
 						});
 						var ItemLocationIDSearchResults = ItemLocationIDSearch.run();
@@ -147,11 +186,11 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 							});
 							loc_config.setValue({
 									fieldId: 'subsidiary',
-									value: 2
+									value: subsidiaryId
 							});
 							loc_config.setValue({
 									fieldId: 'location',
-									value: 3
+									value: locationId
 							});
 							loc_config.setValue({
 									fieldId: 'item',
@@ -181,11 +220,48 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 		}
 
+		function fieldChanged(scriptContext) {
+			try{
+
+				if (scriptContext.fieldId == 'custpage_subsidiary' || scriptContext.fieldId == 'custpage_location'){
+					var currRec = scriptContext.currentRecord;
+					var locVal = currRec.getValue({
+						fieldId: 'custpage_location'
+					});
+					var subVal = currRec.getValue({
+						fieldId: 'custpage_subsidiary'
+					});
+
+					var suiteletLink = url.resolveScript({
+						scriptId: scriptid_number,
+						deploymentId: deploymentid_number
+					});
+					if (subVal){
+						suiteletLink += '&subVal=' + subVal;
+					}
+					if (locVal){
+						suiteletLink += '&locVal=' + locVal;
+					}
+					window.onbeforeunload = null;
+					window.location.href = suiteletLink;
+
+				}
+
+			}
+			catch(error){
+				//alert("Error in field changed", error);
+				console.log("error ", error);
+				log.debug("Error in field changed", error);
+			}
+
+		}
+
 		function pageInit(scriptContext) {}
 
 
 		return {
 			changeShippingMethod: changeShippingMethod,
+			fieldChanged:fieldChanged,
 			countInterval: countInterval,
 			pageInit: pageInit
 		};
