@@ -5,6 +5,7 @@
  */
 
 var best_seller_search_id = 'customsearch5941';
+var bins_count_search_id = 'customsearch4564';
 var bin_search_id = 'customsearch5942';
 var replenish_search_id = 'customsearch5943';
 var replenActive_search_id = 'customsearch5944';
@@ -28,10 +29,14 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 					var itemName = context.request.parameters.itemName;
 					var typeVal = context.request.parameters.typeVal;
+					var locVal = context.request.parameters.locVal;
 					var itemType = context.request.parameters.itemType;
 					var binDone = context.request.parameters.binDone;
 					var bestPreffered = context.request.parameters.bestPreffered;
 					var bestSold = context.request.parameters.bestSold;
+
+					var binsPreffered = context.request.parameters.binsPreffered;
+
 					var consolidation = context.request.parameters.consolidation;
 					var minimum = context.request.parameters.minimum;
 
@@ -45,6 +50,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						type: serverWidget.FieldType.SELECT,
 						label: 'Type'
 					});
+					var locationFieldObj = form.addField({
+						id: 'custpage_location',
+						type: serverWidget.FieldType.SELECT,
+						label: 'Location',
+						source: 'location'
+					});
+
 					typeFieldObj.addSelectOption({
 						value: '',
 						text: ''
@@ -52,6 +64,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 					typeFieldObj.addSelectOption({
 						value: 'best_seller',
 						text: 'best_seller'
+					});
+					typeFieldObj.addSelectOption({
+						value: 'bins_count',
+						text: 'bins_count'
 					});
 					typeFieldObj.addSelectOption({
 						value: 'bins',
@@ -65,22 +81,33 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						form.updateDefaultValues({
 							custpage_type: typeVal
 						});
-						switch(typeVal){
-							case 'best_seller':
-							form = best_sellerForm(form, bestPreffered, bestSold, itemName);
-							break;
-							case 'bins':
-							form = binsForm(form, itemName, itemType, binDone);
-							break;
-							case 'replenishments':
-							form = replenishmentForm(form, consolidation, itemName, minimum);
-							break;
-							default:
-							//error message
-							break;
+					}
+					if(locVal){
+						form.updateDefaultValues({
+							custpage_location: locVal
+						});
+						if (typeVal){
+							switch(typeVal){
+								case 'best_seller':
+								form = best_sellerForm(form, bestPreffered, bestSold, itemName, locVal);
+								break;
+								case 'bins':
+								form = binsForm(form, itemName, itemType, binDone, locVal);
+								break;
+								case 'replenishments':
+								form = replenishmentForm(form, consolidation, itemName, minimum, locVal);
+								break;
+								case 'bins_count':
+								form = bins_countForm(form, binsPreffered, itemName, locVal);
+								break;
+								default:
+								//error message
+								break;
 
+							}
 						}
 					}
+
 					var clientScriptInternalId = returnClientScriptInternalId();
 					log.debug("clientScriptInternalId", clientScriptInternalId);
 
@@ -106,7 +133,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 		}
 
-		function best_sellerForm(form, bestPreffered, bestSold, itemName){
+		function best_sellerForm(form, bestPreffered, bestSold, itemName, locVal){
 			form.addField({
 				id: 'custpage_best_preffered',
 				type: serverWidget.FieldType.CHECKBOX,
@@ -167,6 +194,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			try{
 			var best_sellerSearch = search.load({ id: best_seller_search_id});
 			var bestfilters = best_sellerSearch.filters;
+
+			if (locVal){
+				 bestfilters.push(search.createFilter({name: 'location', join: 'binnumber', operator: search.Operator.ANYOF, values: locVal }));
+				 bestfilters.push(search.createFilter({name: 'inventorylocation', join: 'item', operator: search.Operator.ANYOF, values: locVal }));
+				 bestfilters.push(search.createFilter({name: 'location', operator: search.Operator.ANYOF, values: locVal }));
+			}
 
 			if (bestPreffered == 'true'){
 				bestPreffered = 'T';
@@ -252,7 +285,150 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			return form;
 		}
 
-		function binsForm(form, itemName, itemTypeVal, binDone){
+		function bins_countForm(form, binsPreffered, itemName, locVal){
+			form.addField({
+				id: 'custpage_count_preffered',
+				type: serverWidget.FieldType.CHECKBOX,
+				label: 'PREFFERED BIN'
+			});
+			form.addField({
+				id: 'custpage_count_itemname',
+				type: serverWidget.FieldType.TEXT,
+				label: 'ITEM NAME'
+			});
+			form.addField({
+				id: 'custpage_count_bin',
+				type: serverWidget.FieldType.TEXT,
+				label: 'NEW BIN NAME'
+			});
+
+			var binscountList = form.addSublist({
+				id: 'custpage_countlist',
+				type: serverWidget.SublistType.LIST,
+				label: 'Bins count'
+			});
+			binscountList.addField({
+				id: 'custpage_countlist_checkbox',
+				type: serverWidget.FieldType.CHECKBOX,
+				label: 'CHECKBOX'
+			});
+			binscountList.addField({
+				id: 'custpage_countlist_item',
+				type: serverWidget.FieldType.TEXT,
+				label: 'ITEM'
+			});
+			binscountList.addField({
+				id: 'custpage_countlist_item_id',
+				type: serverWidget.FieldType.TEXT,
+				label: 'ITEM ID'
+			}).updateDisplayType({
+				displayType: serverWidget.FieldDisplayType.HIDDEN
+			});
+			binscountList.addField({
+				id: 'custpage_countlist_display',
+				type: serverWidget.FieldType.TEXT,
+				label: 'DISPLAY NAME'
+			});
+			binscountList.addField({
+				id: 'custpage_countlist_number',
+				type: serverWidget.FieldType.TEXT,
+				label: 'NUMBER OF BINS'
+			});
+			binscountList.addField({
+				id: 'custpage_countlist_lowest',
+				type: serverWidget.FieldType.TEXT,
+				label: 'LOWEST BIN'
+			});
+
+			try{
+			var bins_countSearch = search.load({ id: bins_count_search_id});
+			var binsfilters = bins_countSearch.filters;
+
+			if (locVal){
+				 binsfilters.push(search.createFilter({name: 'inventorylocation', operator: search.Operator.ANYOF, values: locVal }));
+				 binsfilters.push(search.createFilter({name: 'location', join: 'binonhand', operator: search.Operator.ANYOF, values: locVal }));
+			}
+
+			if (binsPreffered == 'true'){
+				binsPreffered = 'T';
+				binsfilters.push(search.createFilter({name: 'preferredbin', operator: search.Operator.IS, values: 'T' }));
+				binsfilters.push(search.createFilter({name: 'location', join: 'binnumber', operator: search.Operator.ANYOF, values: locVal }));
+				form.updateDefaultValues({
+					custpage_count_preffered: binsPreffered
+				});
+			}
+			else{
+				binsPreffered = 'F';
+				binsfilters.push(search.createFilter({name: 'preferredbin', operator: search.Operator.IS, values: 'F' }));
+				form.updateDefaultValues({
+					custpage_count_preffered: binsPreffered
+				});
+			}
+			if(itemName){
+				form.updateDefaultValues({
+					custpage_count_itemname: itemName
+				});
+				binsfilters.push(search.createFilter({name: 'name', operator: search.Operator.CONTAINS, values: itemName }));
+
+			}
+
+			//
+			bins_countSearch.filters = binsfilters;
+
+			log.debug("best filters ", bins_countSearch.filterExpression);
+
+			var results_bins_countSearch = bins_countSearch.run();
+			var results_bins_countSearch_array = results_bins_countSearch.getRange({
+				start: 0,
+				end: 1000
+			});
+
+			if (results_bins_countSearch_array.length > 20) results_bins_countSearch_array.length = 20;
+
+			log.debug("results_best_sellerSearch_array -> ", results_bins_countSearch_array);
+
+			log.debug("results_stagingSearch_array.lenght -> ", results_bins_countSearch_array.length);
+			for (var i=0;  i < results_bins_countSearch_array.length; i++){
+				binscountList.setSublistValue({
+					id: 'custpage_countlist_item',
+					line: i,
+					value: results_bins_countSearch_array[i].getValue(results_bins_countSearch.columns[0])
+				});
+				binscountList.setSublistValue({
+					id: 'custpage_countlist_item_id',
+					line: i,
+					value: results_bins_countSearch_array[i].getValue(results_bins_countSearch.columns[2])
+				});
+				binscountList.setSublistValue({
+					id: 'custpage_countlist_display',
+					line: i,
+					value: results_bins_countSearch_array[i].getValue(results_bins_countSearch.columns[1])
+				});
+				binscountList.setSublistValue({
+					id: 'custpage_countlist_number',
+					line: i,
+					value: results_bins_countSearch_array[i].getValue(results_bins_countSearch.columns[3])
+				});
+				var recomended = results_bins_countSearch_array[i].getValue(results_bins_countSearch.columns[4]);
+				if (!recomended){
+					recomended = '01-01-A'
+				}
+				binscountList.setSublistValue({
+					id: 'custpage_countlist_lowest',
+					line: i,
+					value: recomended
+				});
+			}
+
+			}
+			catch(e){
+				log.error("error in loading bins count list", e);
+			}
+			return form;
+
+		}
+
+		function binsForm(form, itemName, itemTypeVal, binDone, locVal){
 			// form.addField({
 			// 	id: 'custpage_label',
 			// 	type: serverWidget.FieldType.LABEL,
@@ -387,6 +563,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			if (itemName){
 				binfilters.push(search.createFilter({name: 'name', operator: search.Operator.CONTAINS, values: itemName }));
 			}
+
+			if (locVal){
+				 binfilters.push(search.createFilter({name: 'location', join: 'binnumber', operator: search.Operator.ANYOF, values: locVal }));
+			}
+
 			if (itemTypeVal){
 				form.updateDefaultValues({
 					custpage_bin_type: itemTypeVal
@@ -533,7 +714,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			return form;
 		}
 
-		function replenishmentForm(form, consolidation, itemName, minimum){
+		function replenishmentForm(form, consolidation, itemName, minimum, locVal){
 
 			form.addField({
 				id: 'custpage_replenishment_consolidation',
@@ -656,6 +837,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			}
 
 			var replenActiveSearch = search.load({ id: replenActive_search_id});
+
+			var replenActivefilters = replenActiveSearch.filters;
+			if (locVal){
+				 replenActivefilters.push(search.createFilter({name: 'custrecord_wmsse_wms_location', operator: search.Operator.ANYOF, values: locVal }));
+			}
+			replenActiveSearch.filters = replenActivefilters;
+
 			var results_replenActiveSearch = replenActiveSearch.run();
 			var results_replenActiveSearch_array = results_replenActiveSearch.getRange({
 				start: 0,
@@ -695,6 +883,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 	 				custpage_replenishment_sku: itemName
 	 			});
 			}
+			if (locVal){
+				 replenfilters.push(search.createFilter({name: 'inventorylocation', operator: search.Operator.ANYOF, values: locVal }));
+				 replenfilters.push(search.createFilter({name: 'location', join: 'binonhand', operator: search.Operator.ANYOF, values: locVal }));
+				 replenfilters.push(search.createFilter({name: 'location', join: 'binnumber', operator: search.Operator.ANYOF, values: locVal }));
+
+			}
 			if (minimum){
 				replenfilters.push(search.createFilter({name: 'formulanumeric', operator: search.Operator.LESSTHANOREQUALTO, values: 0, formula: "{binonhandavail} - NVL({binnumber.custrecord_wmsse_replen_minqty}, 0)" }));
 				if (minimum == 'true'){
@@ -705,7 +899,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				}
 				form.updateDefaultValues({
 				 custpage_replenishment_minimum: minimum
-			 });						}
+			 });
+		 }
 			replenSearch.filters = replenfilters;
 			var results_replenSearch = replenSearch.run();
 			var results_replenSearch_array = results_replenSearch.getRange({
@@ -720,44 +915,13 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 				var fromBin = results_replenSearch_array[i].getText(replenSearch.columns[2]);
 				var binType = 'None';
-				if (fromBin[0] == '0'){
-					if (fromBin[6] == 'E' || fromBin[6] == 'F'){
-						binType = 'Replenishment';
-					}
-					else{
-						binType = 'Consolidation';
-					}
-				}
-				else {
-					if(fromBin[0] == '1'){
-						if(fromBin[1] == '8' || fromBin[1] == '9'){
-							if(fromBin[6] == 'F'){
-								binType = 'Replenishment';
-							}
-							else {
-								binType = 'Consolidation';
-							}
-						}
-						else {
-							if(fromBin[6] == 'G' || fromBin[6] == 'H'){
-								binType = 'Replenishment';
-							}
-							else {
-								binType = 'Consolidation';
-							}
-						}
-					}
-					else {
-						if (fromBin[0] == '2' || fromBin[0] == '3' || fromBin[0] == '4'){
-							if(fromBin[6] == 'F'){
-								binType = 'Replenishment';
-							}
-							else {
-								binType = 'Consolidation';
-							}
-						}
-					}
-				}
+
+				log.debug("binType before", binType);
+
+				binType = warehousePalletConfiguration(locVal, fromBin);
+
+				log.debug("binType after", binType);
+
 
 				if (consolidation == 'T'){
 					if (binType == 'Replenishment'){
@@ -912,6 +1076,61 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 
 			return form;
+		}
+
+		function warehousePalletConfiguration(location, fromBin){
+			var Germany_location = 4;
+			var USA_location = 3;
+			var USA_rma_location = 6;
+			var Germany_rma_location = 8;
+
+			if (location == USA_location){
+				var binType = 'None';
+				if (fromBin[0] == '0'){
+					if (fromBin[6] == 'E' || fromBin[6] == 'F'){
+						binType = 'Replenishment';
+					}
+					else{
+						binType = 'Consolidation';
+					}
+				}
+				else {
+					if(fromBin[0] == '1'){
+						if(fromBin[1] == '8' || fromBin[1] == '9'){
+							if(fromBin[6] == 'F'){
+								binType = 'Replenishment';
+							}
+							else {
+								binType = 'Consolidation';
+							}
+						}
+						else {
+							if(fromBin[6] == 'G' || fromBin[6] == 'H'){
+								binType = 'Replenishment';
+							}
+							else {
+								binType = 'Consolidation';
+							}
+						}
+					}
+					else {
+						if (fromBin[0] == '2' || fromBin[0] == '3' || fromBin[0] == '4'){
+							if(fromBin[6] == 'F'){
+								binType = 'Replenishment';
+							}
+							else {
+								binType = 'Consolidation';
+							}
+						}
+					}
+				}
+				return binType;
+			}
+			else{
+				return 'Replenishment';
+			}
+
+
 		}
 
 		//	The function returns the search result array

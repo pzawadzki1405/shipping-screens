@@ -25,21 +25,34 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				var typeVal = currRec.getValue({
 					fieldId: 'custpage_type'
 				});
-				switch(typeVal){
-					case 'best_seller':
-					best_button(currRec);
-					break;
-					case 'bins':
-					bin_button(currRec);
-					break;
-					case 'replenishments':
-					replen_button(currRec);
-					break;
-					default:
-					//error message
-					break;
+				var locVal = currRec.getValue({
+					fieldId: 'custpage_location'
+				});
+				if (locVal){
+					switch(typeVal){
+						case 'best_seller':
+						best_button(currRec);
+						break;
+						case 'bins_count':
+						count_button(currRec);
+						break;
+						case 'bins':
+						bin_button(currRec);
+						break;
+						case 'replenishments':
+						replen_button(currRec);
+						break;
+						default:
+						//error message
+						break;
 
+					}
 				}
+				else{
+					alert("Please select location");
+					return;
+				}
+
 
 			}
 			catch(err){
@@ -52,6 +65,9 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			try{
 				var numLines = currRec.getLineCount({
 					sublistId: 'custpage_bestlist'
+				});
+				var locVal = currRec.getValue({
+					fieldId: 'custpage_location'
 				});
 
 				for (var i = 0; i < numLines; i++) {
@@ -108,7 +124,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
     						fieldId: 'location'
 							});
 							console.log("binLocation "+binLocation);
-							if (binLocation == USA_location){
+							if (binLocation == locVal){
 
 								var binNumberId= bestitemId.getCurrentSublistValue({
 									sublistId: 'binnumber',
@@ -160,7 +176,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						bestitemId.setCurrentSublistValue({
 						    sublistId: 'binnumber',
 						    fieldId: 'location',
-						    value: USA_location
+						    value: locVal
 						});
 
 						var binNumberValue = currRec.getValue({
@@ -186,19 +202,159 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						});
 						bestitemId.save();
 						console.log("FINISHED making bin for  "+itemSku);
-						//alert("FINISHED making bin for  "+itemSku);
-						//log.debug("record saved");
-						// var id = record.load({
-						// 	type: record.Type.INVENTORY_ITEM,
-						// 	id: 7045,
-						// });
+
+					}
+				}
+				alert("FINISHED making bins");
+				resetPage("refresh");
+			}
+			catch(e){
+				log.error("error in best button ", e);
+			}
+
+		}
+
+		function count_button(currRec){
+			try{
+				var numLines = currRec.getLineCount({
+					sublistId: 'custpage_countlist'
+				});
+				var locVal = currRec.getValue({
+					fieldId: 'custpage_location'
+				});
+
+				for (var i = 0; i < numLines; i++) {
+					var checkbox = currRec.getSublistValue({
+						sublistId: 'custpage_countlist',
+						fieldId: 'custpage_countlist_checkbox',
+						line: i
+					});
+					if (checkbox){
+						var itemid = currRec.getSublistValue({
+							sublistId: 'custpage_countlist',
+							fieldId: 'custpage_countlist_item_id',
+							line: i
+						});
+
+						var itemSku = currRec.getSublistValue({
+							sublistId: 'custpage_countlist',
+							fieldId: 'custpage_countlist_item',
+							line: i
+						});
+
+						var recomended = currRec.getSublistValue({
+							sublistId: 'custpage_countlist',
+							fieldId: 'custpage_countlist_lowest',
+							line: i
+						});
+
+						console.log("START making bin for  "+itemSku);
+
+						var bestitemId = record.load({
+							type: record.Type.INVENTORY_ITEM,
+							id: itemid,
+							isDynamic: true,
+						});
+						var bestitemBin = bestitemId.getSublist({
+								sublistId: 'binnumber'
+						});
+
+						var numLinesBins = bestitemId.getLineCount({
+								sublistId: 'binnumber'
+						});
+
+						console.log("lines num  "+numLinesBins);
+
+						log.debug("binnumber subblist  ", bestitemBin);
+
+						for (var j = numLinesBins; j >= 0; j--){
+							bestitemId.selectLine({
+								sublistId: 'binnumber',
+								line: j
+							});
+							var binLocation = bestitemId.getCurrentSublistValue({
+								sublistId: 'binnumber',
+								fieldId: 'location'
+							});
+							console.log("binLocation "+binLocation);
+							if (binLocation == locVal){
+
+								var binNumberId= bestitemId.getCurrentSublistValue({
+									sublistId: 'binnumber',
+									fieldId: 'binnumber'
+								});
+
+								var binRecord= record.load({
+									type: record.Type.BIN,
+									id: binNumberId,
+									isDynamic: true,
+								});
+
+								binRecord.setValue({
+									fieldId: 'custrecord_wmsse_replen_maxqty',
+									value: ''
+								});
+
+								binRecord.setValue({
+									fieldId: 'custrecord_wmsse_replen_minqty',
+									value: ''
+								});
+
+								binRecord.setValue({
+									fieldId: 'custrecord_wmsse_replen_qty',
+									value: ''
+								});
+
+								binRecord.setValue({
+									fieldId: 'custrecord_wmsse_replen_roundqty',
+									value: ''
+								});
+
+								var id = binRecord.save();
+
+								bestitemId.removeLine({
+									sublistId: 'binnumber',
+									line: j
+								});
+
+
+							}
+						}
+
+						console.log("lines num  "+numLines);
+
+						bestitemId.selectNewLine({
+							sublistId: 'binnumber'
+						});
+						bestitemId.setCurrentSublistValue({
+								sublistId: 'binnumber',
+								fieldId: 'location',
+								value: locVal
+						});
+
+						var binNumberValue = currRec.getValue({
+								fieldId: 'custpage_count_bin'
+						});
 						//
-						// log.debug("id to jest ", id.getSublistValue({
-						// 	sublistId: 'binnumber',
-    				// 	fieldId: 'binnumber',
-    				// 	line: 0}
-						// ));
-						//console.log("id to jest ", id.getValue({fieldId: 'binnumber'}));
+						if(binNumberValue){
+							recomended = binNumberValue;
+						}
+
+						bestitemId.setCurrentSublistText({
+								sublistId: 'binnumber',
+								fieldId: 'binnumber',
+								text: recomended
+						});
+						bestitemId.setCurrentSublistValue({
+								sublistId: 'binnumber',
+								fieldId: 'preferredbin',
+								value: true
+						});
+						bestitemId.commitLine({
+								sublistId: 'binnumber'
+						});
+						bestitemId.save();
+						console.log("FINISHED making bin for  "+itemSku);
 
 					}
 				}
@@ -216,6 +372,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			try{
 			var numLines = currRec.getLineCount({
 				sublistId: 'custpage_binslist'
+			});
+
+			var locVal = currRec.getValue({
+				fieldId: 'custpage_location'
 			});
 
 			for (var i = 0; i < numLines; i++) {
@@ -248,7 +408,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 						fieldId: 'custpage_binslist_item',
 						line: i
 					});
-					
+
 					console.log("Start making bin for  "+bin_name);
 
 					var binRecord= record.load({
@@ -310,6 +470,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 				sublistId: 'custpage_replenlist'
 			});
 
+			var locVal = currRec.getValue({
+				fieldId: 'custpage_location'
+			});
+
 			for (var i = 0; i < numLines; i++) {
 				var checkbox = currRec.getSublistValue({
 					sublistId: 'custpage_replenlist',
@@ -359,6 +523,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					var replenActiveSearch = search.load({ id: replenActive_search_id});
 					var replenfilters = replenActiveSearch.filters;
 					replenfilters.push(search.createFilter({name: 'custrecord_wmsse_sku', operator: search.Operator.ANYOF, values: replenishmentItemId }));
+					replenfilters.push(search.createFilter({name: 'custrecord_wmsse_wms_location', operator: search.Operator.ANYOF, values: locVal }));
 					replenActiveSearch.filters = replenfilters;
 					var results_replenActiveSearch = replenActiveSearch.run();
 					var results_replenActiveSearch_array = results_replenActiveSearch.getRange({
@@ -449,7 +614,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 					replenishmentTask.setValue({
 							fieldId: 'custrecord_wmsse_wms_location',
-							value: USA_location
+							value: locVal
 					});
 
 					replenishmentTask.setValue({
@@ -480,16 +645,24 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 		function fieldChanged(scriptContext) {
 			try{
-		if (scriptContext.fieldId == 'custpage_type'){
+		if (scriptContext.fieldId == 'custpage_type' || scriptContext.fieldId == 'custpage_location'){
 			var currRec = scriptContext.currentRecord;
 			var typeVal = currRec.getValue({
 				fieldId: 'custpage_type'
+			});
+			var locationVal = currRec.getValue({
+				fieldId: 'custpage_location'
 			});
 			var suiteletLink = url.resolveScript({
 				scriptId: scriptid_number,
 				deploymentId: deploymentid_number
 			});
-			suiteletLink += '&typeVal=' + typeVal;
+			if (typeVal){
+				suiteletLink += '&typeVal=' + typeVal;
+			}
+			if (locationVal){
+				suiteletLink += '&locVal=' + locationVal;
+			}
 			window.onbeforeunload = null;
 			window.location.href = suiteletLink;
 	}
@@ -501,6 +674,10 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		});
 		var typeVal = currRec.getValue({
 			fieldId: 'custpage_type'
+		});
+
+		var locVal = currRec.getValue({
+			fieldId: 'custpage_location'
 		});
 
 		var itemName = currRec.getValue({
@@ -517,6 +694,9 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		});
 		if (typeVal){
 			suiteletLink += '&typeVal=' + typeVal;
+		}
+		if (locVal){
+			suiteletLink += '&locVal=' + locVal;
 		}
 		if (consolidation){
 			suiteletLink += '&consolidation=' + consolidation;
@@ -540,6 +720,9 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		var typeVal = currRec.getValue({
 			fieldId: 'custpage_type'
 		});
+		var locVal = currRec.getValue({
+			fieldId: 'custpage_location'
+		});
 		var bestSold = currRec.getValue({
 			fieldId: 'custpage_best_sold'
 		});
@@ -555,6 +738,9 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		if (typeVal){
 			suiteletLink += '&typeVal=' + typeVal;
 		}
+		if (locVal){
+			suiteletLink += '&locVal=' + locVal;
+		}
 		if (bestItemName){
 			suiteletLink += '&itemName=' + bestItemName;
 		}
@@ -567,6 +753,45 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		window.onbeforeunload = null;
 		window.location.href = suiteletLink;
 	}
+
+	if (scriptContext.fieldId == 'custpage_count_preffered'  || scriptContext.fieldId == 'custpage_count_itemname'){
+		var currRec = scriptContext.currentRecord;
+		var binsPreffered = currRec.getValue({
+			fieldId: 'custpage_count_preffered'
+		});
+		var typeVal = currRec.getValue({
+			fieldId: 'custpage_type'
+		});
+		var locVal = currRec.getValue({
+			fieldId: 'custpage_location'
+		});
+
+
+		var bestItemName = currRec.getValue({
+			fieldId: 'custpage_count_itemname'
+		});
+
+		var suiteletLink = url.resolveScript({
+			scriptId: scriptid_number,
+			deploymentId: deploymentid_number
+		});
+		if (typeVal){
+			suiteletLink += '&typeVal=' + typeVal;
+		}
+		if (locVal){
+			suiteletLink += '&locVal=' + locVal;
+		}
+		if (bestItemName){
+			suiteletLink += '&itemName=' + bestItemName;
+		}
+		if (binsPreffered){
+			suiteletLink += '&binsPreffered=' + binsPreffered;
+		}
+
+		window.onbeforeunload = null;
+		window.location.href = suiteletLink;
+	}
+
 	if (scriptContext.fieldId == 'custpage_bin_item' || scriptContext.fieldId == 'custpage_bin_type' || scriptContext.fieldId == 'custpage_bin_done'){
 		var currRec = scriptContext.currentRecord;
 		var itemName = currRec.getValue({
@@ -574,6 +799,9 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		});
 		var typeVal = currRec.getValue({
 			fieldId: 'custpage_type'
+		});
+		var locVal = currRec.getValue({
+			fieldId: 'custpage_location'
 		});
 		var itemtype = currRec.getValue({
 			fieldId: 'custpage_bin_type'
@@ -587,6 +815,9 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		});
 		if (typeVal){
 			suiteletLink += '&typeVal=' + typeVal;
+		}
+		if (locVal){
+			suiteletLink += '&locVal=' + locVal;
 		}
 		if (itemtype){
 			suiteletLink += '&itemType=' + itemtype;
@@ -627,6 +858,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		return {
 			submit_button: submit_button,
 			best_button:best_button,
+			count_button:count_button,
 			replen_button:replen_button,
 			bin_button:bin_button,
 			fieldChanged:fieldChanged,
