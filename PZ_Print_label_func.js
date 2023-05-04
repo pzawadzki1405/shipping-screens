@@ -246,6 +246,14 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 			      fieldId: 'custpage_item_fullfilment_hiden',
 			      line: 0,
 			    });
+					record.submitFields({
+						type: 'itemfulfillment',
+						id: itemFulfilmentId,
+						values: {
+							shipstatus: 'C',
+							custbody_label_printed: true,
+						},
+					});
 					var pdfFile = search.lookupFields({
 			      type: 'itemfulfillment',
 			      id: itemFulfilmentId,
@@ -284,14 +292,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					// 		//window.location.href = currentUrl + resetPage;
 					// 	}, 2000);
 					// });
-			    record.submitFields({
-			      type: 'itemfulfillment',
-			      id: itemFulfilmentId,
-			      values: {
-			        shipstatus: 'C',
-			        custbody_label_printed: true,
-			      },
-			    });
+
 			    var resetPage = url.resolveScript({
 			      scriptId: scriptid_number,
 			      deploymentId: deploymentid_number,

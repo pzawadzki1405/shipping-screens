@@ -214,6 +214,7 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 
 			}
 			catch(err){
+				alert("Error in count interval: \n"+err.message);
 				log.error("Error in countInterval()", err);
 			}
 
@@ -223,13 +224,17 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 		function fieldChanged(scriptContext) {
 			try{
 
-				if (scriptContext.fieldId == 'custpage_subsidiary' || scriptContext.fieldId == 'custpage_location'){
+				if (scriptContext.fieldId == 'custpage_subsidiary' || scriptContext.fieldId == 'custpage_location'|| scriptContext.fieldId == 'custpage_option'){
 					var currRec = scriptContext.currentRecord;
 					var locVal = currRec.getValue({
 						fieldId: 'custpage_location'
 					});
 					var subVal = currRec.getValue({
 						fieldId: 'custpage_subsidiary'
+					});
+
+					var optVal = currRec.getValue({
+						fieldId: 'custpage_option'
 					});
 
 					var suiteletLink = url.resolveScript({
@@ -241,6 +246,9 @@ define(['N/url', 'N/currentRecord', 'N/record', 'N/search', 'N/https', 'N/ui/dia
 					}
 					if (locVal){
 						suiteletLink += '&locVal=' + locVal;
+					}
+					if (optVal){
+						suiteletLink += '&optVal=' + optVal;
 					}
 					window.onbeforeunload = null;
 					window.location.href = suiteletLink;

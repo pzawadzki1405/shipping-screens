@@ -203,14 +203,14 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 			if (bestPreffered == 'true'){
 				bestPreffered = 'T';
-				bestfilters.push(search.createFilter({name: 'preferredbin', join: 'item', operator: search.Operator.IS, values: 'T' }));
+				//bestfilters.push(search.createFilter({name: 'preferredbin', join: 'item', operator: search.Operator.IS, values: 'T' }));
 				form.updateDefaultValues({
 					custpage_best_preffered: bestPreffered
 				});
 			}
 			else{
 				bestPreffered = 'F';
-				bestfilters.push(search.createFilter({name: 'preferredbin', join: 'item', operator: search.Operator.IS, values: 'F' }));
+				bestfilters.push(search.createFilter({name: 'formulatext', operator: search.Operator.ISEMPTY, formula: "{locationbinquantityavailable}" }));
 				form.updateDefaultValues({
 					custpage_best_preffered: bestPreffered
 				});
@@ -359,7 +359,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			}
 			else{
 				binsPreffered = 'F';
-				binsfilters.push(search.createFilter({name: 'preferredbin', operator: search.Operator.IS, values: 'F' }));
+				//binsfilters.push(search.createFilter({name: 'preferredbin', operator: search.Operator.IS, values: 'F' }));
+				binsfilters.push(search.createFilter({name: 'formulatext', operator: search.Operator.ISEMPTY, formula: "{locationbinquantityavailable}" }));
+
 				form.updateDefaultValues({
 					custpage_count_preffered: binsPreffered
 				});

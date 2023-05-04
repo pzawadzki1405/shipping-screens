@@ -19,10 +19,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 			try {
 				var title = " onRequest ";
 				if (context.request.method === 'GET') {
-
+					var USA_WH_Location = 3;
 					var itemName = context.request.parameters.itemName;
 					var carrierVal = context.request.parameters.carrierVal;
 					var locationVal = context.request.parameters.locationVal;
+					locationVal = USA_WH_Location; //always only USA WH location
 					var allowRepeating = context.request.parameters.allowRepeating;
 					var selectOrderNo = context.request.parameters.selectOrderNo;
 					var waveNumber = context.request.parameters.waveNumber;
@@ -596,17 +597,21 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 										}
 
 										var carrierName = getShippingItemCarrier(shipMethodVal);
-										var urlVal = SHIPPING_METHOD_URL[carrierName]
-
-										newUrlVal = urlVal.replace("SOINTERNALID", createdFromSoId);
-										newUrlVal = newUrlVal.replace("IFINTERNALID", ifIdVal);
+										var urlVal = "";
+										if (carrierName == "fedex" || carrierName == "usps"){
+											urlVal = SHIPPING_METHOD_URL[carrierName];
+											urlVal = urlVal.replace("SOINTERNALID", createdFromSoId);
+											urlVal = urlVal.replace("IFINTERNALID", ifIdVal);
+										}
+										//var newUrlVal;
+										//var newUrlVal = newUrlVal.replace("IFINTERNALID", ifIdVal);
 
 										if (itemFullfillmentIdArray.indexOf(lineId) == -1 && allowRepeating == 'T') {
-											if (validateValue(newUrlVal)) {
+											if (validateValue(urlVal)) {
 												sublist.setSublistValue({
 													id: 'custpage_link',
 													line: r,
-													value: newUrlVal
+													value: urlVal
 												});
 											}
 
@@ -696,11 +701,11 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 													value: ifIdVal
 												});
 											}
-											if (validateValue(newUrlVal)) {
+											if (validateValue(urlVal)) {
 												sublist.setSublistValue({
 													id: 'custpage_link',
 													line: r,
-													value: newUrlVal
+													value: urlVal
 												});
 											}
 											if (validateValue(orderNo)) {
@@ -1495,9 +1500,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 				var shipitemSearchObj = search.create({
 					type: "shipitem",
-					filters: [
-						["isshipperintegrated", "is", "T"]
-					],
+				//	filters: [
+						//["isshipperintegrated", "is", "T"]
+//],
 					columns: [search.createColumn({
 						name: "itemid",
 						sort: search.Sort.ASC,
@@ -1529,8 +1534,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 				var shipitemSearchObj = search.create({
 					type: "shipitem",
 					filters: [
-						["isshipperintegrated", "is", "T"],
-						"AND", ["itemid", "is", carrierVal]
+						//["isshipperintegrated", "is", "T"],
+						//"AND",
+						 ["itemid", "is", carrierVal]
 					],
 					columns: [
 						search.createColumn({

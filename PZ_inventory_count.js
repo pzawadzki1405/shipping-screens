@@ -15,6 +15,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 					var locVal = context.request.parameters.locVal;
 					var subVal = context.request.parameters.subVal;
+					var optVal = context.request.parameters.optVal;
+
 
 					var form = serverWidget.createForm({
 						title: 'Inventory Counting'
@@ -27,12 +29,33 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 						label: 'TEST BUTTON: '
 					});
 
+					var optionFieldObj = form.addField({
+						id: 'custpage_option',
+						type: serverWidget.FieldType.SELECT,
+						label: 'Option',
+					});
+
+					optionFieldObj.addSelectOption({
+						value: '',
+						text: ''
+					});
+					optionFieldObj.addSelectOption({
+						value: 'yesterday',
+						text: 'Items from yesterday'
+					});
+					optionFieldObj.addSelectOption({
+						value: 'all',
+						text: 'All items'
+					});
+
 					var locationFieldObj = form.addField({
 						id: 'custpage_location',
 						type: serverWidget.FieldType.SELECT,
 						label: 'Location',
 						source: 'location'
 					});
+
+
 
 					var subsidiaryFieldObj = form.addField({
 						id: 'custpage_subsidiary',
@@ -50,6 +73,12 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 							custpage_subsidiary: subVal
 						});
 					}
+					if (optVal){
+						form.updateDefaultValues({
+							custpage_option: optVal
+						});
+					}
+
 
 
 					var orders = form.addField({
@@ -118,76 +147,82 @@ define(['N/ui/serverWidget', 'N/search', 'N/https', 'N/ui/message', 'N/record', 
 
 					var strOutput = "";
 					try{
+						if (optVal == 'yesterday'){
+							var picktaskSearch = search.load({ id: 'customsearch4892'});
+							var picktaskFilters = picktaskSearch.filters;
+							//itemName = results_movements_search_array[i].getText(results_movements_search.columns[2]);
+							//itemBin = results_movements_search_array[i].getValue(results_movements_search.columns[4]);
+							picktaskFilters.push(search.createFilter({ name: 'location', operator: search.Operator.ANYOF, values: locVal}));
+							picktaskFilters.push(search.createFilter({name: 'inventorylocation', join: 'item', operator: search.Operator.ANYOF, values: locVal }));
+							picktaskSearch.filters = picktaskFilters;
+							var results_picktask_search = picktaskSearch.run();
+							var results_picktask_search_array = results_picktask_search.getRange({
+								start: 0,
+								end: 30
+							});
 
-						var picktaskSearch = search.load({ id: 'customsearch4892'});
-						var picktaskFilters = picktaskSearch.filters;
-						//itemName = results_movements_search_array[i].getText(results_movements_search.columns[2]);
-						//itemBin = results_movements_search_array[i].getValue(results_movements_search.columns[4]);
-						picktaskFilters.push(search.createFilter({ name: 'location', operator: search.Operator.ANYOF, values: locVal}));
-						picktaskFilters.push(search.createFilter({name: 'inventorylocation', join: 'item', operator: search.Operator.ANYOF, values: locVal }));
-						picktaskSearch.filters = picktaskFilters;
-						var results_picktask_search = picktaskSearch.run();
-						var results_picktask_search_array = results_picktask_search.getRange({
-							start: 0,
-							end: 30
-						});
+							log.debug("results_picktask_search_array.length -->: ", results_picktask_search_array.length);
 
-						log.debug("results_picktask_search_array.length -->: ", results_picktask_search_array.length);
+							//FEDEX HOME VAL = 3, USPS PRIORITY = 54
+							for (var i = 0; i < results_picktask_search_array.length; i++){
+								picktaskList.setSublistValue({
+									id: 'custpage_picktasklist_item',
+									line: i,
+									value: results_picktask_search_array[i].getValue(results_picktask_search.columns[0])
+								});
+								picktaskList.setSublistValue({
+									id: 'custpage_picktasklist_bin',
+									line: i,
+									value: results_picktask_search_array[i].getText(results_picktask_search.columns[1])
+								});
+								picktaskList.setSublistValue({
+									id: 'custpage_picktasklist_available',
+									line: i,
+									value: results_picktask_search_array[i].getValue(results_picktask_search.columns[2])
+								});
+								var date = results_picktask_search_array[i].getValue(results_picktask_search.columns[3]);
+								if (!date) date = 0;
+								picktaskList.setSublistValue({
+									id: 'custpage_picktasklist_date',
+									line: i,
+									value: date
+								});
+								picktaskList.setSublistValue({
+									id: 'custpage_picktasklist_itemid',
+									line: i,
+									value: results_picktask_search_array[i].getText(results_picktask_search.columns[4])
+								});
+								picktaskList.setSublistValue({
+									id: 'custpage_picktasklist_binid',
+									line: i,
+									value: results_picktask_search_array[i].getText(results_picktask_search.columns[5])
+								});
+								var countInterval = results_picktask_search_array[i].getValue(results_picktask_search.columns[6]);
+								if (!countInterval) countInterval = 0;
+								picktaskList.setSublistValue({
+									id: 'custpage_picktasklist_interval',
+									line: i,
+									value: countInterval
+								});
 
-						//FEDEX HOME VAL = 3, USPS PRIORITY = 54
-						for (var i = 0; i < results_picktask_search_array.length; i++){
-							picktaskList.setSublistValue({
-								id: 'custpage_picktasklist_item',
-								line: i,
-								value: results_picktask_search_array[i].getValue(results_picktask_search.columns[0])
-							});
-							picktaskList.setSublistValue({
-								id: 'custpage_picktasklist_bin',
-								line: i,
-								value: results_picktask_search_array[i].getText(results_picktask_search.columns[1])
-							});
-							picktaskList.setSublistValue({
-								id: 'custpage_picktasklist_available',
-								line: i,
-								value: results_picktask_search_array[i].getValue(results_picktask_search.columns[2])
-							});
-							var date = results_picktask_search_array[i].getValue(results_picktask_search.columns[3]);
-							if (!date) date = 0;
-							picktaskList.setSublistValue({
-								id: 'custpage_picktasklist_date',
-								line: i,
-								value: date
-							});
-							picktaskList.setSublistValue({
-								id: 'custpage_picktasklist_itemid',
-								line: i,
-								value: results_picktask_search_array[i].getText(results_picktask_search.columns[4])
-							});
-							picktaskList.setSublistValue({
-								id: 'custpage_picktasklist_binid',
-								line: i,
-								value: results_picktask_search_array[i].getText(results_picktask_search.columns[5])
-							});
-							var countInterval = results_picktask_search_array[i].getValue(results_picktask_search.columns[6]);
-							if (!countInterval) countInterval = 0;
-							picktaskList.setSublistValue({
-								id: 'custpage_picktasklist_interval',
-								line: i,
-								value: countInterval
-							});
+							}
+							for (var i = 0; i < results_picktask_search_array.length; i++){
+									strOutput += 'Item: ' + results_picktask_search_array[i].getValue(results_picktask_search.columns[0]) + ' Bin: ' +
+									results_picktask_search_array[i].getText(results_picktask_search.columns[1]) +' Location avaible: ' +
+									results_picktask_search_array[i].getValue(results_picktask_search.columns[2]) +'\n';
+							}
+
+							if (strOutput == ''){
+								strOutput = 'NOTHING';
+							}
 						}
 
 
 
-						for (var i = 0; i < results_picktask_search_array.length; i++){
-								strOutput += 'Item: ' + results_picktask_search_array[i].getValue(results_picktask_search.columns[0]) + ' Bin: ' +
-								results_picktask_search_array[i].getText(results_picktask_search.columns[1]) +' Location avaible: ' +
-								results_picktask_search_array[i].getValue(results_picktask_search.columns[2]) +'\n';
-						}
 
-						if (strOutput == ''){
-							strOutput = 'NOTHING';
-						}
+
+
+
 					}
 					catch (err){
 						 log.error("Error in pick task low quantity", err);
